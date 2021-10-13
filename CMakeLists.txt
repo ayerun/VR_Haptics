@@ -18,8 +18,10 @@ find_package(Qt5SerialPort REQUIRED)
 
 add_definitions(-DXR_USE_GRAPHICS_API_VULKAN)
 
-file(GLOB LOCAL_HEADERS "include/*.h")
-file(GLOB LOCAL_SOURCE "src/*.cpp")
+file(GLOB LOCAL_GRAPHICS_HEADERS "include/graphics/*.h")
+file(GLOB LOCAL_HAPTICS_HEADERS "include/haptics/*.hpp")
+file(GLOB LOCAL_GRAPHICS_SOURCE "src/graphics/*.cpp")
+file(GLOB LOCAL_HAPTICS_SOURCE "src/haptics/*.cpp")
 file(GLOB VULKAN_SHADERS "vulkan_shaders/*.glsl")
 
 function(compile_glsl run_target_name)
@@ -39,32 +41,37 @@ function(compile_glsl run_target_name)
 endfunction()
 
 # For including compiled shaders
-include_directories("include" ${CMAKE_CURRENT_BINARY_DIR})
+include_directories("include/graphics" "include/haptics" ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(scene
-    "src/main.cc"
-    ${LOCAL_SOURCE}
-    ${LOCAL_HEADERS}
+    "src/scene_main.cpp"
+    ${LOCAL_GRAPHICS_SOURCE}
+    ${LOCAL_GRAPHICS_HEADERS}
     ${VULKAN_SHADERS})
 
-add_executable(motor_scene
-    "src/motor_main.cc"
-    "src/motor_communication.cc"
-    "include/motor_communication.hpp"
-    ${LOCAL_SOURCE}
-    ${LOCAL_HEADERS}
+add_executable(haptic_scene
+    "src/haptic_scene_main.cpp"
+    ${LOCAL_GRAPHICS_SOURCE}
+    ${LOCAL_GRAPHICS_HEADERS}
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS}
     ${VULKAN_SHADERS})
+
+add_executable(stop_motor
+    "src/motor_stop_main.cpp"
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS})
 
 compile_glsl(run_scene_glsl_compiles ${VULKAN_SHADERS})
 
 add_dependencies(scene run_scene_glsl_compiles)
-add_dependencies(motor_scene run_scene_glsl_compiles)
+add_dependencies(haptic_scene run_scene_glsl_compiles)
 
 target_include_directories(scene 
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-target_include_directories(motor_scene 
+target_include_directories(haptic_scene 
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
@@ -72,7 +79,7 @@ target_link_libraries(scene
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
-target_link_libraries(motor_scene 
+target_link_libraries(haptic_scene 
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
@@ -80,8 +87,13 @@ install(TARGETS scene
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT scene)
 
-install(TARGETS motor_scene
+install(TARGETS haptic_scene
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT motor_scene)
+    COMPONENT haptic_scene)
 
-qt5_use_modules(motor_scene Core SerialPort)
+install(TARGETS stop_motor
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT stop_motor)
+
+qt5_use_modules(haptic_scene Core SerialPort)
+qt5_use_modules(stop_motor Core SerialPort)
