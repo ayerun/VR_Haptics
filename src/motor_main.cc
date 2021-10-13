@@ -14,50 +14,6 @@
 #include <QStringList>
 #include <QTextStream>
 
-namespace {
-
-<<<<<<< HEAD
-    void ShowHelp() {
-        // TODO: Improve/update when things are more settled.
-        Log::Write(Log::Level::Info,
-                "scene --graphics|-g <Graphics API> [--formfactor|-ff <Form factor>] [--viewconfig|-vc <View config>] "
-                "[--blendmode|-bm <Blend mode>] [--space|-s <Space>] [--verbose|-v]");
-        Log::Write(Log::Level::Info, "Graphics APIs:            Vulkan2");
-        Log::Write(Log::Level::Info, "Form factors:             Hmd");
-        Log::Write(Log::Level::Info, "View configurations:      Stereo");
-        Log::Write(Log::Level::Info, "Environment blend modes:  Opaque, Additive, AlphaBlend");
-        Log::Write(Log::Level::Info, "Spaces:                   View, Local, Stage");
-=======
-void ShowHelp() {
-    // TODO: Improve/update when things are more settled.
-    Log::Write(Log::Level::Info,
-               "scene --graphics|-g <Graphics API> [--formfactor|-ff <Form factor>] [--viewconfig|-vc <View config>] "
-               "[--blendmode|-bm <Blend mode>] [--space|-s <Space>] [--verbose|-v]");
-    Log::Write(Log::Level::Info, "Graphics APIs:            Vulkan2");
-    Log::Write(Log::Level::Info, "Form factors:             Hmd");
-    Log::Write(Log::Level::Info, "View configurations:      Stereo");
-    Log::Write(Log::Level::Info, "Environment blend modes:  Opaque, Additive, AlphaBlend");
-    Log::Write(Log::Level::Info, "Spaces:                   View, Local, Stage");
-}
-
-bool UpdateOptionsFromCommandLine(Options& options) {
-    // Set graphics plugin to Vulkan2 by default
-    if (options.GraphicsPlugin.empty()) {
-        options.GraphicsPlugin = "Vulkan2";
-    }
-
-    // Set form factor to hmd by default
-    if (options.FormFactor.empty()) {
-        options.FormFactor = "Hmd";
-    }
-
-    // Set view configuration to stereo by defaul
-    if (options.ViewConfiguration.empty()) {
-        options.ViewConfiguration = "Stereo";
->>>>>>> origin/dev
-    }
-}  // namespace
-
 int main(int argc, char* argv[]) {
     //get command line args (port and buad rate)
     QCoreApplication coreApplication(argc, argv);
@@ -67,7 +23,7 @@ int main(int argc, char* argv[]) {
     //expection: incorrect number of command line args
     QTextStream standardOutput(stdout);
     if (argumentCount == 1) {
-        standardOutput << QObject::tr("Usage: %1 <serialportname> [baudrate]")
+        standardOutput << QObject::tr("Usage: %1 <serialportname>")
                         .arg(argumentList.first()) << endl;
         return 1;
     }
@@ -88,17 +44,9 @@ int main(int argc, char* argv[]) {
     //prepare odrive for torque control
     board.setClosedLoopControl(0);
     board.setTorqueControlMode(0);
-    board.sendTorqueCommand(0,0);
+    board.sendTorqueCommand(0,0.1);
 
-    // Spawn a thread to wait for a keypress
-    static bool quitKeyPressed = false;
-    auto exitPollingThread = std::thread{[] {
-        Log::Write(Log::Level::Info, "Press any key to shutdown...");
-        (void)getchar();
-        quitKeyPressed = true;
-    }};
-    exitPollingThread.detach();
-
+    //Render in separate thread
     auto renderThread = std::thread{[] {
         
         // Set graphics plugin, VR form factor, and VR view configuration
@@ -123,8 +71,8 @@ int main(int argc, char* argv[]) {
             program->InitializeSession();
             program->CreateSwapchains();
 
-            while (!quitKeyPressed) {
-                bool exitRenderLoop = false;
+            bool exitRenderLoop = false;
+            while (!exitRenderLoop) {
                 program->PollEvents(&exitRenderLoop, &requestRestart);
                 if (exitRenderLoop) {
                     break;
@@ -139,7 +87,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-        } while (!quitKeyPressed && requestRestart);
+        } while (requestRestart);
     }};
     renderThread.detach();
     
