@@ -16,6 +16,7 @@
 
 namespace {
 
+<<<<<<< HEAD
     void ShowHelp() {
         // TODO: Improve/update when things are more settled.
         Log::Write(Log::Level::Info,
@@ -26,6 +27,34 @@ namespace {
         Log::Write(Log::Level::Info, "View configurations:      Stereo");
         Log::Write(Log::Level::Info, "Environment blend modes:  Opaque, Additive, AlphaBlend");
         Log::Write(Log::Level::Info, "Spaces:                   View, Local, Stage");
+=======
+void ShowHelp() {
+    // TODO: Improve/update when things are more settled.
+    Log::Write(Log::Level::Info,
+               "scene --graphics|-g <Graphics API> [--formfactor|-ff <Form factor>] [--viewconfig|-vc <View config>] "
+               "[--blendmode|-bm <Blend mode>] [--space|-s <Space>] [--verbose|-v]");
+    Log::Write(Log::Level::Info, "Graphics APIs:            Vulkan2");
+    Log::Write(Log::Level::Info, "Form factors:             Hmd");
+    Log::Write(Log::Level::Info, "View configurations:      Stereo");
+    Log::Write(Log::Level::Info, "Environment blend modes:  Opaque, Additive, AlphaBlend");
+    Log::Write(Log::Level::Info, "Spaces:                   View, Local, Stage");
+}
+
+bool UpdateOptionsFromCommandLine(Options& options) {
+    // Set graphics plugin to Vulkan2 by default
+    if (options.GraphicsPlugin.empty()) {
+        options.GraphicsPlugin = "Vulkan2";
+    }
+
+    // Set form factor to hmd by default
+    if (options.FormFactor.empty()) {
+        options.FormFactor = "Hmd";
+    }
+
+    // Set view configuration to stereo by defaul
+    if (options.ViewConfiguration.empty()) {
+        options.ViewConfiguration = "Stereo";
+>>>>>>> origin/dev
     }
 }  // namespace
 
