@@ -1562,8 +1562,3 @@ std::shared_ptr<IGraphicsPlugin> CreateGraphicsPlugin_Vulkan(const std::shared_p
                                                              std::shared_ptr<IPlatformPlugin> platformPlugin) {
     return std::make_shared<VulkanGraphicsPlugin>(options, std::move(platformPlugin));
 }
-
-std::shared_ptr<IGraphicsPlugin> CreateGraphicsPlugin_VulkanLegacy(const std::shared_ptr<Options>& options,
-                                                                   std::shared_ptr<IPlatformPlugin> platformPlugin) {
-    return std::make_shared<VulkanGraphicsPluginLegacy>(options, std::move(platformPlugin));
-}

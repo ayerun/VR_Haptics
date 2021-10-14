@@ -41,6 +41,6 @@ struct IGraphicsPlugin {
     }
 };
 
-// Create a graphics plugin for the graphics API specified in the options.
-std::shared_ptr<IGraphicsPlugin> CreateGraphicsPlugin(const std::shared_ptr<struct Options>& options,
-                                                      std::shared_ptr<struct IPlatformPlugin> platformPlugin);
+// Create vulkan graphics plugin
+std::shared_ptr<IGraphicsPlugin> CreateGraphicsPlugin_Vulkan(const std::shared_ptr<struct Options>& options,
+                                                             std::shared_ptr<struct IPlatformPlugin> platformPlugin);

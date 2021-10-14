@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
             std::shared_ptr<IPlatformPlugin> platformPlugin = CreatePlatformPlugin(options);
 
             // Create graphics API implementation.
-            std::shared_ptr<IGraphicsPlugin> graphicsPlugin = CreateGraphicsPlugin(options, platformPlugin);
+            std::shared_ptr<IGraphicsPlugin> graphicsPlugin = CreateGraphicsPlugin_Vulkan(options, platformPlugin);
 
             // Initialize the OpenXR program.
             std::shared_ptr<IOpenXrProgram> program = CreateOpenXrProgram(options, platformPlugin, graphicsPlugin);
