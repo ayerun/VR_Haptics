@@ -554,7 +554,7 @@ struct OpenXrProgram : IOpenXrProgram {
     void CreateVisualizedSpaces() {
         CHECK(m_session != XR_NULL_HANDLE);
 
-        std::string visualizedSpaces[] = {"ViewFront",        "Local", "Stage", "StageLeft", "StageRight", "StageLeftRotated",
+        std::string visualizedSpaces[] = {"Local", "Stage", "StageLeft", "StageRight", "StageLeftRotated",
                                           "StageRightRotated"};
 
         for (const auto& visualizedSpace : visualizedSpaces) {
