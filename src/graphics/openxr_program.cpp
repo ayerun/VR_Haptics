@@ -863,6 +863,13 @@ struct OpenXrProgram : IOpenXrProgram {
                     hapticActionInfo.action = m_input.vibrateAction;
                     hapticActionInfo.subactionPath = m_input.handSubactionPath[hand];
                     CHECK_XRCMD(xrApplyHapticFeedback(m_session, &hapticActionInfo, (XrHapticBaseHeader*)&vibration));
+
+                    if (hand == Side::LEFT) {
+                        m_board->sendTorqueCommand(0,0);
+                    }
+                    else {
+                        m_board->sendTorqueCommand(0,0.1);
+                    }
                 }
             }
 
