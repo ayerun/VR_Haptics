@@ -119,9 +119,9 @@ inline XrReferenceSpaceCreateInfo GetXrReferenceSpaceCreateInfo(const std::strin
 }
 
 struct OpenXrProgram : IOpenXrProgram {
-    OpenXrProgram(const std::shared_ptr<Options>& options, const std::shared_ptr<IPlatformPlugin>& platformPlugin,
-                  const std::shared_ptr<IGraphicsPlugin>& graphicsPlugin)
-        : m_options(options), m_platformPlugin(platformPlugin), m_graphicsPlugin(graphicsPlugin) {}
+    OpenXrProgram(const std::shared_ptr<Options> &options, const std::shared_ptr<IPlatformPlugin> &platformPlugin,
+                  const std::shared_ptr<IGraphicsPlugin> &graphicsPlugin, const std::shared_ptr<odrive> &board)
+        : m_options(options), m_platformPlugin(platformPlugin), m_graphicsPlugin(graphicsPlugin), m_board(board) {}
 
     ~OpenXrProgram() override {
         if (m_input.actionSet != XR_NULL_HANDLE) {
@@ -1012,6 +1012,7 @@ struct OpenXrProgram : IOpenXrProgram {
     const std::shared_ptr<Options> m_options;
     std::shared_ptr<IPlatformPlugin> m_platformPlugin;
     std::shared_ptr<IGraphicsPlugin> m_graphicsPlugin;
+    std::shared_ptr<odrive> m_board;
     XrInstance m_instance{XR_NULL_HANDLE};
     XrSession m_session{XR_NULL_HANDLE};
     XrSpace m_appSpace{XR_NULL_HANDLE};
@@ -1037,8 +1038,9 @@ struct OpenXrProgram : IOpenXrProgram {
 };
 }  // namespace
 
-std::shared_ptr<IOpenXrProgram> CreateOpenXrProgram(const std::shared_ptr<Options>& options,
-                                                    const std::shared_ptr<IPlatformPlugin>& platformPlugin,
-                                                    const std::shared_ptr<IGraphicsPlugin>& graphicsPlugin) {
-    return std::make_shared<OpenXrProgram>(options, platformPlugin, graphicsPlugin);
+std::shared_ptr<IOpenXrProgram> CreateOpenXrProgram(const std::shared_ptr<Options> &options,
+                                                    const std::shared_ptr<IPlatformPlugin> &platformPlugin,
+                                                    const std::shared_ptr<IGraphicsPlugin> &graphicsPlugin,
+                                                    const std::shared_ptr<odrive> &board) {
+    return std::make_shared<OpenXrProgram>(options, platformPlugin, graphicsPlugin, board);
 }

@@ -43,11 +43,11 @@ endfunction()
 # For including compiled shaders
 include_directories("include/graphics" "include/haptics" ${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(scene
-    "src/scene_main.cpp"
-    ${LOCAL_GRAPHICS_SOURCE}
-    ${LOCAL_GRAPHICS_HEADERS}
-    ${VULKAN_SHADERS})
+# add_executable(scene
+#     "src/scene_main.cpp"
+#     ${LOCAL_GRAPHICS_SOURCE}
+#     ${LOCAL_GRAPHICS_HEADERS}
+#     ${VULKAN_SHADERS})
 
 add_executable(haptic_scene
     "src/haptic_scene_main.cpp"
@@ -64,28 +64,28 @@ add_executable(stop_motor
 
 compile_glsl(run_scene_glsl_compiles ${VULKAN_SHADERS})
 
-add_dependencies(scene run_scene_glsl_compiles)
+# add_dependencies(scene run_scene_glsl_compiles)
 add_dependencies(haptic_scene run_scene_glsl_compiles)
 
-target_include_directories(scene 
-    PRIVATE OpenXR::Headers
-    PRIVATE ${Vulkan_INCLUDE_DIRS})
+# target_include_directories(scene 
+#     PRIVATE OpenXR::Headers
+#     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_include_directories(haptic_scene 
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-target_link_libraries(scene 
-    OpenXR::openxr_loader
-    ${Vulkan_LIBRARY})
+# target_link_libraries(scene 
+#     OpenXR::openxr_loader
+#     ${Vulkan_LIBRARY})
 
 target_link_libraries(haptic_scene 
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
-install(TARGETS scene
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT scene)
+# install(TARGETS scene
+#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#     COMPONENT scene)
 
 install(TARGETS haptic_scene
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

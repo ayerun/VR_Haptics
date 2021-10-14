@@ -14,6 +14,48 @@
 #include <QStringList>
 #include <QTextStream>
 
+void render(const std::shared_ptr<odrive> board) {
+    // Set graphics plugin, VR form factor, and VR view configuration
+    std::shared_ptr<Options> options = std::make_shared<Options>();
+    options->GraphicsPlugin = "Vulkan2";
+    options->FormFactor = "Hmd";
+    options->ViewConfiguration = "Stereo";
+
+    bool requestRestart = false;
+    do {
+        // Create platform-specific implementation.
+        std::shared_ptr<IPlatformPlugin> platformPlugin = CreatePlatformPlugin(options);
+
+        // Create graphics API implementation.
+        std::shared_ptr<IGraphicsPlugin> graphicsPlugin = CreateGraphicsPlugin(options, platformPlugin);
+
+        // Initialize the OpenXR program.
+        std::shared_ptr<IOpenXrProgram> program = CreateOpenXrProgram(options, platformPlugin, graphicsPlugin, board);
+
+        program->CreateInstance();
+        program->InitializeSystem();
+        program->InitializeSession();
+        program->CreateSwapchains();
+
+        bool exitRenderLoop = false;
+        while (!exitRenderLoop) {
+            program->PollEvents(&exitRenderLoop, &requestRestart);
+            if (exitRenderLoop) {
+                break;
+            }
+
+            if (program->IsSessionRunning()) {
+                program->PollActions();
+                program->RenderFrame();
+            } else {
+                // Throttle loop since xrWaitFrame won't be called.
+                std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            }
+        }
+
+    } while (requestRestart);
+}
+
 int main(int argc, char* argv[]) {
     //get command line args (port and buad rate)
     QCoreApplication coreApplication(argc, argv);
@@ -39,58 +81,16 @@ int main(int argc, char* argv[]) {
     bool result = serialPort.open(QIODevice::ReadWrite);
 
     //Create odrive object
-    odrive board(&serialPort);
+    std::shared_ptr<odrive> board = std::make_shared<odrive>(&serialPort);
 
     //prepare odrive for torque control
-    board.setClosedLoopControl(0);
-    board.setTorqueControlMode(0);
-    board.sendTorqueCommand(0,0.1);
+    board->setClosedLoopControl(0);
+    board->setTorqueControlMode(0);
+    board->sendTorqueCommand(0,0.1);
 
     //Render in separate thread
-    auto renderThread = std::thread{[] {
-        
-        // Set graphics plugin, VR form factor, and VR view configuration
-        std::shared_ptr<Options> options = std::make_shared<Options>();
-        options->GraphicsPlugin = "Vulkan2";
-        options->FormFactor = "Hmd";
-        options->ViewConfiguration = "Stereo";
-
-        bool requestRestart = false;
-        do {
-            // Create platform-specific implementation.
-            std::shared_ptr<IPlatformPlugin> platformPlugin = CreatePlatformPlugin(options);
-
-            // Create graphics API implementation.
-            std::shared_ptr<IGraphicsPlugin> graphicsPlugin = CreateGraphicsPlugin(options, platformPlugin);
-
-            // Initialize the OpenXR program.
-            std::shared_ptr<IOpenXrProgram> program = CreateOpenXrProgram(options, platformPlugin, graphicsPlugin);
-
-            program->CreateInstance();
-            program->InitializeSystem();
-            program->InitializeSession();
-            program->CreateSwapchains();
-
-            bool exitRenderLoop = false;
-            while (!exitRenderLoop) {
-                program->PollEvents(&exitRenderLoop, &requestRestart);
-                if (exitRenderLoop) {
-                    break;
-                }
-
-                if (program->IsSessionRunning()) {
-                    program->PollActions();
-                    program->RenderFrame();
-                } else {
-                    // Throttle loop since xrWaitFrame won't be called.
-                    std::this_thread::sleep_for(std::chrono::milliseconds(250));
-                }
-            }
-
-        } while (requestRestart);
-    }};
+    auto renderThread = std::thread(render,board);
     renderThread.detach();
-    
 
     //exit application
     return coreApplication.exec();

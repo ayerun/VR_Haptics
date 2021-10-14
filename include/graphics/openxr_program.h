@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+#include "motor_communication.hpp"
 
 struct IOpenXrProgram {
     virtual ~IOpenXrProgram() = default;
@@ -45,4 +46,5 @@ struct Swapchain {
 
 std::shared_ptr<IOpenXrProgram> CreateOpenXrProgram(const std::shared_ptr<Options>& options,
                                                     const std::shared_ptr<IPlatformPlugin>& platformPlugin,
-                                                    const std::shared_ptr<IGraphicsPlugin>& graphicsPlugin);
+                                                    const std::shared_ptr<IGraphicsPlugin>& graphicsPlugin,
+                                                    const std::shared_ptr<odrive> &board);
