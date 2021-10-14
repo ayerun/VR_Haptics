@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
         bool requestRestart = false;
         do {
             // Create platform-specific implementation.
-            std::shared_ptr<IPlatformPlugin> platformPlugin = CreatePlatformPlugin(options);
+            std::shared_ptr<IPlatformPlugin> platformPlugin = CreatePlatformPlugin_Xlib(options);
 
             // Create graphics API implementation.
             std::shared_ptr<IGraphicsPlugin> graphicsPlugin = CreateGraphicsPlugin_Vulkan(options, platformPlugin);

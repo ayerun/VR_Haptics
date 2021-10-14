@@ -15,5 +15,5 @@ struct IPlatformPlugin {
     virtual std::vector<std::string> GetInstanceExtensions() const = 0;
 };
 
-// Create a platform plugin for the platform specified at compile time.
-std::shared_ptr<IPlatformPlugin> CreatePlatformPlugin(const std::shared_ptr<struct Options>& options);
+// Create a platform plugin for xlib.
+std::shared_ptr<IPlatformPlugin> CreatePlatformPlugin_Xlib(const std::shared_ptr<struct Options> &options);
