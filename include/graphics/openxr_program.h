@@ -36,7 +36,7 @@ struct IOpenXrProgram {
     // Create and submit a frame.
     virtual XrTime RenderFrame() = 0;
 
-    virtual XrPosef getControllerPose(XrTime predictedDisplayTime) = 0;
+    virtual XrSpaceLocation getControllerSpace(XrTime predictedDisplayTime) = 0;
 };
 
 struct Swapchain {

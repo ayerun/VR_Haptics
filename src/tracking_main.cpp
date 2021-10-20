@@ -56,8 +56,10 @@ int main(int argc, char* argv[]) {
                 if (program->IsSessionRunning()) {
                     program->PollActions();
                     displayTime = program->RenderFrame();
-                    XrPosef pose = program->getControllerPose(displayTime);
-                    Log::Write(Log::Level::Error, std::to_string(pose.position.x));
+                    XrSpaceLocation pos = program->getControllerSpace(displayTime);
+                    auto vel {static_cast<XrSpaceVelocity*>(pos.next)};
+                    // Log::Write(Log::Level::Error, std::to_string(space.pose.position.x));
+                    Log::Write(Log::Level::Error, std::to_string(vel->linearVelocity.x));
                 } else {
                     // Throttle loop since xrWaitFrame won't be called.
                     std::this_thread::sleep_for(std::chrono::milliseconds(250));

@@ -12,17 +12,17 @@
 #include <array>
 #include <cmath>
 
-namespace {
-
-#if !defined(XR_USE_PLATFORM_WIN32)
-#define strcpy_s(dest, source) strncpy((dest), (source), sizeof(dest))
-#endif
-
 namespace Side {
 const int LEFT = 0;
 const int RIGHT = 1;
 const int COUNT = 2;
 }  // namespace Side
+
+namespace {
+
+#if !defined(XR_USE_PLATFORM_WIN32)
+#define strcpy_s(dest, source) strncpy((dest), (source), sizeof(dest))
+#endif
 
 inline std::string GetXrVersionString(XrVersion ver) {
     return Fmt("%d.%d.%d", XR_VERSION_MAJOR(ver), XR_VERSION_MINOR(ver), XR_VERSION_PATCH(ver));
@@ -910,19 +910,13 @@ struct OpenXrProgram : IOpenXrProgram {
         return frameState.predictedDisplayTime;
     }
 
-    XrPosef getControllerPose(XrTime predictedDisplayTime) override {
+    XrSpaceLocation getControllerSpace(XrTime predictedDisplayTime) override {
         auto hand = Side::RIGHT;
-        XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION};
+        XrSpaceVelocity spaceVelocity {XR_TYPE_SPACE_VELOCITY};
+        XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION, &spaceVelocity};
         XrResult res = xrLocateSpace(m_input.handSpace[hand], m_appSpace, predictedDisplayTime, &spaceLocation);
-        CHECK_XRRESULT(res, "xrLocateSpace");
-        if (XR_UNQUALIFIED_SUCCESS(res)) {
-            if ((spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
-                (spaceLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
-                return spaceLocation.pose;
-            }
-        }
         
-        return XrPosef();
+        return spaceLocation;
     }
 
     bool RenderLayer(XrTime predictedDisplayTime, std::vector<XrCompositionLayerProjectionView>& projectionLayerViews,
