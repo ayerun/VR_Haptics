@@ -34,7 +34,9 @@ struct IOpenXrProgram {
     virtual void PollActions() = 0;
 
     // Create and submit a frame.
-    virtual void RenderFrame() = 0;
+    virtual XrTime RenderFrame() = 0;
+
+    virtual XrPosef getControllerPose(XrTime predictedDisplayTime) = 0;
 };
 
 struct Swapchain {

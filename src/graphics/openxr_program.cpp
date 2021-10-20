@@ -881,7 +881,7 @@ struct OpenXrProgram : IOpenXrProgram {
         }
     }
 
-    void RenderFrame() override {
+    XrTime RenderFrame() override {
         CHECK(m_session != XR_NULL_HANDLE);
 
         XrFrameWaitInfo frameWaitInfo{XR_TYPE_FRAME_WAIT_INFO};
@@ -906,6 +906,23 @@ struct OpenXrProgram : IOpenXrProgram {
         frameEndInfo.layerCount = (uint32_t)layers.size();
         frameEndInfo.layers = layers.data();
         CHECK_XRCMD(xrEndFrame(m_session, &frameEndInfo));
+
+        return frameState.predictedDisplayTime;
+    }
+
+    XrPosef getControllerPose(XrTime predictedDisplayTime) override {
+        auto hand = Side::RIGHT;
+        XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION};
+        XrResult res = xrLocateSpace(m_input.handSpace[hand], m_appSpace, predictedDisplayTime, &spaceLocation);
+        CHECK_XRRESULT(res, "xrLocateSpace");
+        if (XR_UNQUALIFIED_SUCCESS(res)) {
+            if ((spaceLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
+                (spaceLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
+                return spaceLocation.pose;
+            }
+        }
+        
+        return XrPosef();
     }
 
     bool RenderLayer(XrTime predictedDisplayTime, std::vector<XrCompositionLayerProjectionView>& projectionLayerViews,
