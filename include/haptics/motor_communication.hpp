@@ -74,7 +74,7 @@ class odrive : public QObject
         /// \brief requests position and velocity information from motor
         /// \param motor - motor number (0 or 1)
         /// \returns - list of doubles in format [position, velocity]
-        double* requestFeedback(int motor);
+        void requestFeedback();
 
         /// \brief read odrive voltage
         /// \returns voltage (V)
@@ -103,6 +103,9 @@ class odrive : public QObject
         QByteArray readData;                //data recieved through serial port
         qint64 bytesWritten = 0;            //number of bytes written to serial port
         QTimer w_timer;                     //timer for writing
+        QTimer feedback_timer;              //timer for encoder feedback
+        double encoderPos = 0;              //encoder position
+        double encoderVel = 0;              //encoder velocity
 };
 
 /// \brief calculate the xor of an ascii string

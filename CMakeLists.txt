@@ -3,9 +3,9 @@ project(VR_Haptics VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_AUTOMOC ON)
-# set(CMAKE_AUTORCC ON)
-# set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 if(CMAKE_VERSION VERSION_LESS "3.7.0")
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -13,8 +13,8 @@ endif()
 
 find_package(OpenXR REQUIRED)
 find_package(Vulkan REQUIRED)
-# find_package(Qt5Core REQUIRED)
-# find_package(Qt5SerialPort REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5SerialPort REQUIRED)
 
 add_definitions(-DXR_USE_GRAPHICS_API_VULKAN)
 
@@ -43,6 +43,8 @@ endfunction()
 # For including compiled shaders
 include_directories("include/graphics" "include/haptics" ${CMAKE_CURRENT_BINARY_DIR})
 
+
+#Hand Tracking
 add_executable(tracking
     "src/tracking_main.cpp"
     ${LOCAL_GRAPHICS_SOURCE}
@@ -63,57 +65,79 @@ install(TARGETS tracking
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT scene)
 
-# add_executable(scene
-#     "src/scene_main.cpp"
-#     ${LOCAL_GRAPHICS_SOURCE}
-#     ${LOCAL_GRAPHICS_HEADERS}
-#     ${VULKAN_SHADERS})
 
-# add_executable(haptic_scene
-#     "src/haptic_scene_main.cpp"
-#     ${LOCAL_GRAPHICS_SOURCE}
-#     ${LOCAL_GRAPHICS_HEADERS}
-#     ${LOCAL_HAPTICS_SOURCE}
-#     ${LOCAL_HAPTICS_HEADERS}
-#     ${VULKAN_SHADERS})
+#Default Render Hello XR
+add_executable(scene
+    "src/scene_main.cpp"
+    ${LOCAL_GRAPHICS_SOURCE}
+    ${LOCAL_GRAPHICS_HEADERS}
+    ${VULKAN_SHADERS})
 
-# add_executable(stop_motor
-#     "src/motor_stop_main.cpp"
-#     ${LOCAL_HAPTICS_SOURCE}
-#     ${LOCAL_HAPTICS_HEADERS})
+compile_glsl(run_scene_glsl_compiles ${VULKAN_SHADERS})
 
-# compile_glsl(run_scene_glsl_compiles ${VULKAN_SHADERS})
+add_dependencies(scene run_scene_glsl_compiles)
 
-# add_dependencies(scene run_scene_glsl_compiles)
-# add_dependencies(haptic_scene run_scene_glsl_compiles)
+target_include_directories(scene 
+    PRIVATE OpenXR::Headers
+    PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-# target_include_directories(scene 
-#     PRIVATE OpenXR::Headers
-#     PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(scene 
+    OpenXR::openxr_loader
+    ${Vulkan_LIBRARY})
 
-# target_include_directories(haptic_scene 
-#     PRIVATE OpenXR::Headers
-#     PRIVATE ${Vulkan_INCLUDE_DIRS})
+install(TARGETS scene
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT scene)
 
-# target_link_libraries(scene 
-#     OpenXR::openxr_loader
-#     ${Vulkan_LIBRARY})
+    
+#Render Hello XR and Communicate with motor
+add_executable(haptic_scene
+    "src/haptic_scene_main.cpp"
+    ${LOCAL_GRAPHICS_SOURCE}
+    ${LOCAL_GRAPHICS_HEADERS}
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS}
+    ${VULKAN_SHADERS})
 
-# target_link_libraries(haptic_scene 
-#     OpenXR::openxr_loader
-#     ${Vulkan_LIBRARY})
+add_dependencies(haptic_scene run_scene_glsl_compiles)
 
-# install(TARGETS scene
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#     COMPONENT scene)
+target_include_directories(haptic_scene 
+    PRIVATE OpenXR::Headers
+    PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-# install(TARGETS haptic_scene
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#     COMPONENT haptic_scene)
+target_link_libraries(haptic_scene 
+    OpenXR::openxr_loader
+    ${Vulkan_LIBRARY})
 
-# install(TARGETS stop_motor
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#     COMPONENT stop_motor)
+install(TARGETS haptic_scene
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT haptic_scene)
 
-# qt5_use_modules(haptic_scene Core SerialPort)
-# qt5_use_modules(stop_motor Core SerialPort)
+qt5_use_modules(haptic_scene Core SerialPort)
+
+
+#Stop Motor
+add_executable(stop_motor
+    "src/motor_stop_main.cpp"
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS})
+
+install(TARGETS stop_motor
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT stop_motor)
+
+qt5_use_modules(stop_motor Core SerialPort)
+
+
+
+#Encoder Wall
+add_executable(encoder_wall
+    "src/encoder_wall_main.cpp"
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS})
+
+install(TARGETS encoder_wall
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT encoder_wall)
+
+qt5_use_modules(encoder_wall Core SerialPort)

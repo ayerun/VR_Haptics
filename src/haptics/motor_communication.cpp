@@ -1,6 +1,7 @@
 #include <motor_communication.hpp>
 #include <QList>
 #include <QCoreApplication>
+#include <iostream>
 
 odrive::odrive(QSerialPort* serialPort, QObject* parent) :
     QObject(parent),
@@ -10,6 +11,9 @@ odrive::odrive(QSerialPort* serialPort, QObject* parent) :
     connect(serialPort, &QSerialPort::bytesWritten,this, &odrive::handleBytesWritten);
     connect(serialPort, &QSerialPort::errorOccurred, this, &odrive::handleError);
     connect(&w_timer, &QTimer::timeout, this, &odrive::writeTimeout);
+    connect(&feedback_timer, &QTimer::timeout, this, &odrive::requestFeedback);
+
+    feedback_timer.start(100);
 }
 
 void odrive::handleError(QSerialPort::SerialPortError serialPortError)
@@ -226,14 +230,14 @@ void odrive::sendTorqueCommand(int motor, double torque)
     write(command);
 }
 
-double* odrive::requestFeedback(int motor)
+void odrive::requestFeedback()
 {
-    QString str = QString("f %1").arg(motor);
+    feedback_timer.stop();
+    QString str = QString("f 0");
     const QChar enter(13);
     str.append(enter);
     const QByteArray command = str.toUtf8();
     write(command);
-    static double response[2];
     if(serial->waitForReadyRead(5))
     {
         readData = serial->readAll();
@@ -241,21 +245,18 @@ double* odrive::requestFeedback(int motor)
         char separator = 32;
         const QList<QByteArray> feedback = readData.split(separator);
 
-        response[0] = feedback[0].toDouble();
-        response[1] = feedback[1].toDouble();
+        encoderPos = feedback[0].toDouble();
+        encoderVel = feedback[1].toDouble();
 
-        return response;
+        std::cout << encoderPos << " hi " << encoderVel << std::endl;
     }
     else
     {
         standardOutput << QObject::tr("No data was currently available for reading from port %1")
                         .arg(serial->portName())
                          << "\n";
-
-        response[0] = -1;
-        response[1] = -1;
-        return response;
     }
+    feedback_timer.start(100);
 }
 
 QByteArray odrive::get_readData()
