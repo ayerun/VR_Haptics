@@ -4,6 +4,8 @@
 
 #pragma once
 
+std::tuple<double,double,double> quaternion2rpy(XrQuaternionf q);
+
 struct IOpenXrProgram {
     virtual ~IOpenXrProgram() = default;
 

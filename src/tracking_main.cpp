@@ -9,7 +9,6 @@
 #include "graphicsplugin.h"
 #include "openxr_program.h"
 
-
 int main(int argc, char* argv[]) {
     try {
         // Set graphics plugin, VR form factor, and VR view configuration
@@ -57,9 +56,13 @@ int main(int argc, char* argv[]) {
                     program->PollActions();
                     displayTime = program->RenderFrame();
                     XrSpaceLocation pos = program->getControllerSpace(displayTime);
-                    auto vel {static_cast<XrSpaceVelocity*>(pos.next)};
-                    // Log::Write(Log::Level::Error, std::to_string(space.pose.position.x));
-                    Log::Write(Log::Level::Error, std::to_string(vel->linearVelocity.x));
+                    auto rpy = quaternion2rpy(pos.pose.orientation);
+                    Log::Write(Log::Level::Error, "Roll: " + std::to_string(std::get<0>(rpy)));
+                    Log::Write(Log::Level::Error, "Pitch: " + std::to_string(std::get<1>(rpy)));
+                    Log::Write(Log::Level::Error, "Yaw: " + std::to_string(std::get<2>(rpy)));
+                    // Log::Write(Log::Level::Error, "X Position: " + std::to_string(pos.pose.orientation.x));
+                    // auto vel {static_cast<XrSpaceVelocity*>(pos.next)};
+                    // Log::Write(Log::Level::Error, "Linear X Velocity: " + std::to_string(vel->linearVelocity.x));
                 } else {
                     // Throttle loop since xrWaitFrame won't be called.
                     std::this_thread::sleep_for(std::chrono::milliseconds(250));
