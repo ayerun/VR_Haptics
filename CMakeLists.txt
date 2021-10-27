@@ -3,9 +3,6 @@ project(VR_Haptics VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_AUTOMOC ON)
-# set(CMAKE_AUTORCC ON)
-# set(CMAKE_AUTOUIC ON)
 
 if(CMAKE_VERSION VERSION_LESS "3.7.0")
     set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -13,8 +10,7 @@ endif()
 
 find_package(OpenXR REQUIRED)
 find_package(Vulkan REQUIRED)
-# find_package(Qt5Core REQUIRED)
-# find_package(Qt5SerialPort REQUIRED)
+find_package(nuhal)
 
 add_definitions(-DXR_USE_GRAPHICS_API_VULKAN)
 
@@ -43,13 +39,19 @@ endfunction()
 # For including compiled shaders
 include_directories("include/graphics" "include/haptics" ${CMAKE_CURRENT_BINARY_DIR})
 
+# Compile shaders
+compile_glsl(run_glsl_compiles ${VULKAN_SHADERS})
+
+
+
+# Tracking - Getting Controller position and velocity
 add_executable(tracking
     "src/tracking_main.cpp"
     ${LOCAL_GRAPHICS_SOURCE}
     ${LOCAL_GRAPHICS_HEADERS}
     ${VULKAN_SHADERS})
 
-compile_glsl(run_tracking_glsl_compiles ${VULKAN_SHADERS})
+add_dependencies(tracking run_glsl_compiles)
 
 target_include_directories(tracking 
     PRIVATE OpenXR::Headers
@@ -63,57 +65,64 @@ install(TARGETS tracking
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT scene)
 
-# add_executable(scene
-#     "src/scene_main.cpp"
-#     ${LOCAL_GRAPHICS_SOURCE}
-#     ${LOCAL_GRAPHICS_HEADERS}
-#     ${VULKAN_SHADERS})
 
-# add_executable(haptic_scene
-#     "src/haptic_scene_main.cpp"
-#     ${LOCAL_GRAPHICS_SOURCE}
-#     ${LOCAL_GRAPHICS_HEADERS}
-#     ${LOCAL_HAPTICS_SOURCE}
-#     ${LOCAL_HAPTICS_HEADERS}
-#     ${VULKAN_SHADERS})
 
-# add_executable(stop_motor
-#     "src/motor_stop_main.cpp"
-#     ${LOCAL_HAPTICS_SOURCE}
-#     ${LOCAL_HAPTICS_HEADERS})
+# Scene - Rendering scene
+add_executable(scene
+    "src/scene_main.cpp"
+    ${LOCAL_GRAPHICS_SOURCE}
+    ${LOCAL_GRAPHICS_HEADERS}
+    ${VULKAN_SHADERS})
 
-# compile_glsl(run_scene_glsl_compiles ${VULKAN_SHADERS})
+add_dependencies(scene run_glsl_compiles)
 
-# add_dependencies(scene run_scene_glsl_compiles)
-# add_dependencies(haptic_scene run_scene_glsl_compiles)
+target_include_directories(scene 
+    PRIVATE OpenXR::Headers
+    PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-# target_include_directories(scene 
-#     PRIVATE OpenXR::Headers
-#     PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(scene 
+    OpenXR::openxr_loader
+    ${Vulkan_LIBRARY})
 
-# target_include_directories(haptic_scene 
-#     PRIVATE OpenXR::Headers
-#     PRIVATE ${Vulkan_INCLUDE_DIRS})
+install(TARGETS scene
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT scene)
 
-# target_link_libraries(scene 
-#     OpenXR::openxr_loader
-#     ${Vulkan_LIBRARY})
 
-# target_link_libraries(haptic_scene 
-#     OpenXR::openxr_loader
-#     ${Vulkan_LIBRARY})
+# Haptic Scene - Rendering scene while controller motor
+add_executable(haptic_scene
+    "src/haptic_scene_main.cpp"
+    ${LOCAL_GRAPHICS_SOURCE}
+    ${LOCAL_GRAPHICS_HEADERS}
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS}
+    ${VULKAN_SHADERS})
 
-# install(TARGETS scene
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#     COMPONENT scene)
+add_dependencies(haptic_scene run_glsl_compiles)
 
-# install(TARGETS haptic_scene
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#     COMPONENT haptic_scene)
+target_include_directories(haptic_scene 
+    PRIVATE OpenXR::Headers
+    PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-# install(TARGETS stop_motor
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#     COMPONENT stop_motor)
+target_link_libraries(haptic_scene 
+    nuhal
+    OpenXR::openxr_loader
+    ${Vulkan_LIBRARY})
 
-# qt5_use_modules(haptic_scene Core SerialPort)
-# qt5_use_modules(stop_motor Core SerialPort)
+install(TARGETS haptic_scene
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT haptic_scene)
+
+
+# Stop Motor - Send torque command of 0
+add_executable(stop_motor
+    src/stop_motor_main.cpp
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS})
+
+target_link_libraries(stop_motor 
+    nuhal)
+
+install(TARGETS stop_motor
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT stop_motor)

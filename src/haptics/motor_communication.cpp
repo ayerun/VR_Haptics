@@ -1,279 +1,203 @@
 #include <motor_communication.hpp>
-#include <QList>
-#include <QCoreApplication>
+#include <iostream>
 
-odrive::odrive(QSerialPort* serialPort, QObject* parent) :
-    QObject(parent),
-    serial(serialPort),
-    standardOutput(stdout)
-{
-    connect(serialPort, &QSerialPort::bytesWritten,this, &odrive::handleBytesWritten);
-    connect(serialPort, &QSerialPort::errorOccurred, this, &odrive::handleError);
-    connect(&w_timer, &QTimer::timeout, this, &odrive::writeTimeout);
+Odrive::Odrive(const char name[], unsigned int baud) {
+    board = uart_open(name, baud, UART_FLOW_NONE, UART_PARITY_NONE);
 }
 
-void odrive::handleError(QSerialPort::SerialPortError serialPortError)
-{
-    if (serialPortError == QSerialPort::WriteError)
-    {
-        standardOutput << QObject::tr("An I/O error occurred while writing"
-                                        " the data to port %1, error: %2")
-                            .arg(serial->portName())
-                            .arg(serial->errorString())
-                         << endl;
-        QCoreApplication::exit(1);
-    }
+bool Odrive::updateVoltage() {
+    std::string str = "r vbus_voltage";
+    bool response = writeToBoard(&str,100);
     
-    else if (serialPortError == QSerialPort::ReadError)
-    {
-        standardOutput << QObject::tr("An I/O error occurred while reading "
-                                        "the data from port %1, error: %2")
-                            .arg(serial->portName())
-                            .arg(serial->errorString())
-                         << "\n";
-        QCoreApplication::exit(1);
-    }
-}
-
-void odrive::write(const QByteArray &new_writeData)
-{
-    writeData = new_writeData;
-
-    const qint64 bytesWritten = serial->write(writeData);
-
-    if (bytesWritten == -1) {
-        standardOutput << QObject::tr("Failed to write the data to port %1, error: %2")
-                            .arg(serial->portName())
-                            .arg(serial->errorString())
-                         << endl;
-        QCoreApplication::exit(1);
-    } else if (bytesWritten != writeData.size()) {
-        standardOutput << QObject::tr("Failed to write all the data to port %1, error: %2")
-                            .arg(serial->portName())
-                            .arg(serial->errorString())
-                         << endl;
-        QCoreApplication::exit(1);
-    }
-    w_timer.start(10);
-}
-
-void odrive::handleBytesWritten()
-{
-    w_timer.stop();
-}
-
-void odrive::writeTimeout()
-{
-    standardOutput << QObject::tr("Operation timed out for port %1, error: %2")
-                        .arg(serial->portName())
-                        .arg(serial->errorString())
-                     << endl;
-    QCoreApplication::exit(1);
-}
-
-
-double odrive::readVoltage()
-{
-    //initialize command
-    QString str("r vbus_voltage ");
-
-    //append checksum
-    int checksum = xorAscii(str.toStdString(),str.length());
-    const QString checksum_str = QString("*%1").arg(checksum);
-    str.append(checksum_str);
-
-    //append enter
-    const QChar enter(13);
-    str.append(enter);
-
-    //convert and write
-    const QByteArray command = str.toUtf8();
-    write(command);
-
-    //read
-    if(serial->waitForReadyRead(5))
-    {
-        readData = serial->readAll();
-        double voltage = readData.toDouble();
-        if(serial->waitForReadyRead(5))
-        {
-            readData = serial->readAll();
+    if (response) {
+        char readData[11];
+        bool dataReady = uart_wait_for_data(board,100);
+        if (dataReady) {
+            int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
+            try {
+                voltage = std::stod(readData);
+            }
+            catch (...) {
+                std::cout << "Failed to read voltage" << std::endl;   
+                return false;     
+            }
+            return true;
         }
-        return voltage;
+        else {
+            std::cout << "No voltage data available" << std::endl;
+            return false;
+        }
     }
-    else
-    {
-        standardOutput << QObject::tr("No data was currently available for reading from port %1")
-                        .arg(serial->portName())
-                         << "\n";
-        return -1;
-    }
-}
-
-void odrive::setClosedLoopControl(int motor)
-{
-    QString str = QString("w axis%1.requested_state 8").arg(motor);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-}
-
-int odrive::readState(int motor)
-{
-    QString str = QString("r axis%1.current_state").arg(motor);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-
-    //read
-    if(serial->waitForReadyRead(5))
-    {
-        readData = serial->readAll();
-        int state = readData.toInt();
-        return state;
-    }
-    else
-    {
-        standardOutput << QObject::tr("No data was currently available for reading from port %1")
-                        .arg(serial->portName())
-                         << "\n";
-        return -1;
+    else {
+        std::cout << "Failed to write to odrive" << std::endl;
+        return false;
     }
 }
 
-void odrive::setTorqueControlMode(int motor)
-{
-    QString str = QString("w axis%1.controller.config.control_mode 1").arg(motor);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-}
-
-int odrive::readControlMode(int motor)
-{
-    QString str = QString("r axis%1.controller.config.control_mode").arg(motor);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-
-    //read
-    if(serial->waitForReadyRead(5))
-    {
-        readData = serial->readAll();
-        int mode = readData.toInt();
-        return mode;
+bool Odrive::zeroEncoderPosition(int motor) {
+    std::string str = "f " + std::to_string(motor);
+    bool response = writeToBoard(&str,100);
+    if (response) {
+        char readData[30];
+        bool dataReady = uart_wait_for_data(board,100);
+        if (dataReady) {
+            int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
+            try {
+                encoder_initial = std::stod(readData);
+            }
+            catch(...) {
+                std::cout << "Failed read encoder for zeroing" << std::endl;
+                return false;
+            }
+            encoder_position = 0;
+            return true;
+        }
+        else {
+            std::cout << "No encoder data available" << std::endl;
+            return false;
+        }
     }
-    else
-    {
-        standardOutput << QObject::tr("No data was currently available for reading from port %1")
-                        .arg(serial->portName())
-                         << "\n";
-        return -1;
+    else {
+        std::cout << "Failed to write to odrive" << std::endl;
+        return false;
     }
 }
 
-void odrive::sendMotorTrajectory(int motor, double destination)
-{
-    QString str = QString("t %1 %2").arg(motor).arg(destination);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-}
+bool Odrive::updateEncoderReadings(int motor) {
+    std::string str = "f " + std::to_string(motor);
+    bool response = writeToBoard(&str,100);
+    if (response) {
+        char readData[30];
+        bool dataReady = uart_wait_for_data(board,100);
+        if (dataReady) {
+            int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
+            std::string encoderData(readData);
+            int space = encoderData.find(" ");
+            std::string encoderVelocity = encoderData.substr(space+1,7);
+            try {
+                double newPos = std::stod(encoderData)-encoder_initial;
+                double newVel = std::stod(encoderVelocity);
+                encoder_position = newPos;
+                encoder_velocity = newVel;
+            }
+            catch (...) {
+                std::cout << "Failed to read encoder values" << std::endl;
+                return false;
+            }
 
-void odrive::sendMotorPosition(int motor, double position, double velocity_lim, double torque_lim)
-{
-    QString str = QString("q %1 %2 %3 %4").arg(motor).arg(position).arg(velocity_lim).arg(torque_lim);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-}
-
-void odrive::streamMotorPosition(int motor, double position, double velocity_ff, double torque_ff)
-{
-    QString str = QString("p %1 %2 %3 %4").arg(motor).arg(position).arg(velocity_ff).arg(torque_ff);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-}
-
-void odrive::sendVelocityCommand(int motor, double velocity, double torque_ff)
-{
-    //initialize command
-    QString str = QString("v %1 %2 %3 ").arg(motor).arg(velocity).arg(torque_ff);
-
-    //append enter
-    const QChar enter(13);
-    str.append(enter);
-
-    //convert and write
-    const QByteArray command = str.toUtf8();
-    write(command);
-}
-
-void odrive::sendTorqueCommand(int motor, double torque)
-{
-    QString str = QString("c %1 %2").arg(motor).arg(torque);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-}
-
-double* odrive::requestFeedback(int motor)
-{
-    QString str = QString("f %1").arg(motor);
-    const QChar enter(13);
-    str.append(enter);
-    const QByteArray command = str.toUtf8();
-    write(command);
-    static double response[2];
-    if(serial->waitForReadyRead(5))
-    {
-        readData = serial->readAll();
-
-        char separator = 32;
-        const QList<QByteArray> feedback = readData.split(separator);
-
-        response[0] = feedback[0].toDouble();
-        response[1] = feedback[1].toDouble();
-
-        return response;
+            return true;
+        }
+        else {
+            std::cout << "No encoder data available" << std::endl;
+            return false;
+        }
     }
-    else
-    {
-        standardOutput << QObject::tr("No data was currently available for reading from port %1")
-                        .arg(serial->portName())
-                         << "\n";
-
-        response[0] = -1;
-        response[1] = -1;
-        return response;
+    else {
+        std::cout << "Failed to write to odrive" << std::endl;
+        return false;
     }
 }
 
-QByteArray odrive::get_readData()
-{
-    return readData;
+bool Odrive::sendTorqueCommand(int motor, double torque) {
+    std::string str = "c " + std::to_string(motor) + " " + std::to_string(torque);
+    bool response = writeToBoard(&str,100);
+    if (response) {
+        input_torque = torque;
+    }
+    return response;
 }
 
-int xorAscii(std::string str, int len)
-{
-    //store value of first character
-    int ans = int(str[0]);
-    
-    //calculate XOR
-    for (int i = 1; i < len; i++)
-    {
- 
-        ans = (ans ^ (int(str[i])));
-    }
+bool Odrive::setClosedLoopControl(int motor) {
+    std::string str = "w axis" + std::to_string(motor) + ".requested_state=8";
+    bool response = writeToBoard(&str,100);
+    return response;
+}
 
-    return ans;
+bool Odrive::setTorqueControlMode(int motor) {
+    std::string str = "w axis" + std::to_string(motor) + ".controller.config.control_mode=1";
+    bool response = writeToBoard(&str,100);
+    return response;
+}
+
+bool Odrive::runFullCalibration(int motor) {
+    std::string str = "w axis" + std::to_string(motor) + ".requested_state=3";
+    bool response = writeToBoard(&str,100);
+    return response;
+}
+
+bool Odrive::runEncoderOffsetCalibration(int motor) {
+    std::string str = "w axis" + std::to_string(motor) + ".requested_state=7";
+    bool response = writeToBoard(&str,100);
+    return response;
+}
+
+bool Odrive::updateMotorCurrent(int motor) {
+    std::string str = "r axis" + std::to_string(motor) + ".motor.current_control.Iq_measured";
+    bool response = writeToBoard(&str,100);
+
+    if (response) {
+        char readData[11];
+        bool dataReady = uart_wait_for_data(board,100);
+        if (dataReady) {
+            int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
+            current = std::stod(readData);
+            return true;
+        }
+        else {
+            std::cout << "No current data available" << std::endl;
+            return false;
+        }
+    }
+    else {
+        std::cout << "Failed to write to odrive" << std::endl;
+        return false;
+    }
+}
+
+double Odrive::getCurrent() {
+    return current;
+}
+
+double Odrive::getVoltage() {
+    return voltage;
+}
+
+double Odrive::getInputTorque() {
+    return input_torque;
+}
+
+double Odrive::getEncoderInitial() {
+    return encoder_initial;
+}
+
+double Odrive::getEncoderPosition() {
+    return encoder_position;
+}
+
+double Odrive::getEncoderVelocity() {
+    return encoder_velocity;
+}
+
+bool Odrive::writeToBoard(std::string* str, uint32_t timeout) {
+
+    //Convert string to char pointer
+    char* writable = new char[str->size()+1];
+    std::copy(str->begin(), str->end(), writable);
+
+    //Append '\n'
+    writable[str->size()] = '\n';
+
+    //Write to borad
+    size_t len = str->size()+1;
+    int response = uart_write_block(board,writable,len,timeout);
+
+    //Deallocate memory
+    delete[] writable;
+
+    if (response == len) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }
