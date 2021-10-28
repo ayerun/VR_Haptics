@@ -3,6 +3,8 @@
 #include <motor_communication.hpp>
 #include <iostream>
 #include <signal.h>
+#include <chrono>
+#include <unistd.h>
 
 void signal_callback(int signum) {
    std::cout << "Caught signal " << signum << std::endl;
@@ -20,7 +22,9 @@ int main(int argc, char* argv[]) {
 
     double k = 6;
     double torque = 0;
+    double loop_rate = 0.001;
     while(true) {
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
         odrive.updateEncoderReadings(0);
         double theta = odrive.getEncoderPosition();
 
@@ -55,6 +59,15 @@ int main(int argc, char* argv[]) {
                     odrive.setClosedLoopControl(0);
                 }
             }
+        }
+        std::chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
+        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(stop-start);
+
+        if (time_span.count() < loop_rate) {
+            double sleeptime = loop_rate-time_span.count();
+            // std::cout << "Lap Time: " << time_span.count() << std::endl;
+            // std::cout << "Sleep Time: " << sleeptime << std::endl;
+            sleep(sleeptime);
         }
     }
 }
