@@ -14,14 +14,14 @@ bool Odrive::updateVoltage() {
         bool dataReady = uart_wait_for_data(board,100);
         if (dataReady) {
             int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
-            try {
+            if (isdigit(readData[0])) {
                 voltage = std::stod(readData);
+                return true;
             }
-            catch (...) {
-                std::cout << "Failed to read voltage" << std::endl;   
-                return false;     
+            else {
+                std::cout << "Voltage read write transaction failed" << std::endl;
+                return false;
             }
-            return true;
         }
         else {
             std::cout << "No voltage data available" << std::endl;
@@ -42,15 +42,15 @@ bool Odrive::zeroEncoderPosition(int motor) {
         bool dataReady = uart_wait_for_data(board,100);
         if (dataReady) {
             int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
-            try {
+            if (isdigit(readData[0])) {
                 encoder_initial = std::stod(readData);
+                encoder_position = 0;    
+                return true;
             }
-            catch(...) {
-                std::cout << "Failed read encoder for zeroing" << std::endl;
+            else {
+                std::cout << "Zero encoder read write transaction failed" << std::endl;
                 return false;
             }
-            encoder_position = 0;
-            return true;
         }
         else {
             std::cout << "No encoder data available" << std::endl;
@@ -74,18 +74,15 @@ bool Odrive::updateEncoderReadings(int motor) {
             std::string encoderData(readData);
             int space = encoderData.find(" ");
             std::string encoderVelocity = encoderData.substr(space+1,7);
-            try {
-                double newPos = std::stod(encoderData)-encoder_initial;
-                double newVel = std::stod(encoderVelocity);
-                encoder_position = newPos;
-                encoder_velocity = newVel;
+            if (isdigit(readData[0]) && encoderVelocity.size() > 1) {
+                encoder_position = std::stod(encoderData)-encoder_initial;
+                encoder_velocity = std::stod(encoderVelocity);
+                return true;
             }
-            catch (...) {
-                std::cout << "Failed to read encoder values" << std::endl;
+            else {
+                std::cout << "Encoder read write transaction failed" << std::endl;
                 return false;
             }
-
-            return true;
         }
         else {
             std::cout << "No encoder data available" << std::endl;
@@ -140,8 +137,14 @@ bool Odrive::updateMotorCurrent(int motor) {
         bool dataReady = uart_wait_for_data(board,100);
         if (dataReady) {
             int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
-            current = std::stod(readData);
-            return true;
+            if(isdigit(readData[0])) {
+                current = std::stod(readData);
+                return true;
+            }
+            else {
+                std::cout << "Current read write transaction failed" << std::endl;
+                return false;
+            }
         }
         else {
             std::cout << "No current data available" << std::endl;

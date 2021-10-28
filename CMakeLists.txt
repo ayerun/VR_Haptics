@@ -126,3 +126,16 @@ target_link_libraries(stop_motor
 install(TARGETS stop_motor
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT stop_motor)
+
+
+
+# Encoder Spring Demo
+add_executable(encoder_spring
+    src/encoder_spring_main.cpp
+    src/haptics/motor_communication.cpp
+    include/haptics/motor_communication.hpp
+)
+
+target_link_libraries(encoder_spring
+    nuhal
+)
