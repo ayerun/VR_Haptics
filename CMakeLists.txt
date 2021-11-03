@@ -139,3 +139,11 @@ add_executable(encoder_spring
 target_link_libraries(encoder_spring
     nuhal
 )
+
+# CSV - write to csv file test
+add_executable(csv
+    src/csv.cpp)
+
+install(TARGETS csv
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT scene)
