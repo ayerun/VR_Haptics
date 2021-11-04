@@ -19,6 +19,7 @@ int main(int argc, char* argv[]) {
 
     std::string filename;
     std::string portname;
+    
     if (argc == 2) {
         filename = argv[1];
         portname = "/dev/ttyACM0";
@@ -38,11 +39,10 @@ int main(int argc, char* argv[]) {
 
     Odrive odrive("/dev/ttyACM0", 115200);
     odrive.zeroEncoderPosition(0);
-    // odrive.setClosedLoopControl(0);
 
-    double k = 6;
+    double k = 60;
     double torque = 0;
-    double loop_rate = 0.1;
+    double loop_rate = 0.001;
     std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
     while(true) {
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -63,16 +63,12 @@ int main(int argc, char* argv[]) {
             torque = std::max(0.0,std::min(torque,0.5));
 
             //command motor
-            odrive.sendTorqueCommand(0,0);
+            odrive.sendTorqueCommand(0,-torque);
         }
         //deactivate spring
         else {
             if(odrive.getInputTorque() != 0) {
-                bool safe = odrive.sendTorqueCommand(0,0);
-                // if(safe) {
-                //     //set state to closed loop control in case of motor error
-                //     odrive.setClosedLoopControl(0);
-                // }
+                odrive.sendTorqueCommand(0,0);
             }
         }
         if (current >= 1.5) {

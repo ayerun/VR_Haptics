@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import csv
 
 def main():
-    with open('closed3.csv') as csvfile:
+    with open('final_test_1ms.csv') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=',')
         line_count = 0
         time = []
