@@ -28,7 +28,7 @@ class Odrive {
 
     private:
 
-    bool writeToBoard(std::string* str, uint32_t timeout);
+    bool writeToBoard(const std::string& str, uint32_t timeout);
 
     const uart_port* board;
     double voltage = 0;
