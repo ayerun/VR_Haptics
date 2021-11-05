@@ -7,7 +7,7 @@
 class Odrive {
     public:
 
-    Odrive(const char name[], unsigned int baud);
+    Odrive(const std::string &name, unsigned int baud) ;
 
     bool updateVoltage();
     bool updateEncoderReadings(int motor);

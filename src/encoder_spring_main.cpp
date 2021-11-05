@@ -17,37 +17,59 @@ int main(int argc, char* argv[]) {
     // Register signal and signal callback
     signal(SIGINT, signal_callback);
 
+    //logging
     std::string filename;
+    std::ofstream datafile;
+    bool loggingEnabled = false;
+
+    //Odrive port
     std::string portname;
+    std::string default_port = "/dev/ttyACM0";
     
-    if (argc == 2) {
+    if (argc == 1) {
+        portname = default_port;
+    }
+    else if (argc == 2) {
         filename = argv[1];
-        portname = "/dev/ttyACM0";
+        portname = default_port;
+        loggingEnabled = true;
     } 
     else if (argc == 3) {
         filename = argv[1];
         portname = argv[2];
+        loggingEnabled = true;
     }
     else {
-        std::cout << "whats the output file name?" << std::endl;
+        std::cout << "Invalid number of command line arguements" << std::endl;
         return 0;
     }
 
-    
-    std::ofstream datafile;
-    datafile.open(filename);
+    if (loggingEnabled) {    
+        datafile.open(filename);
+    }
 
-    Odrive odrive("/dev/ttyACM0", 115200);
+    //Odrive setup
+    Odrive odrive(portname, 115200);
     odrive.zeroEncoderPosition(0);
 
+    //constants
     double k = 60;
     double torque = 0;
     double loop_rate = 0.001;
+
+    //start timer
     std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
+
     while(true) {
-        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+        //start loop timer
+        std::chrono::steady_clock::time_point loop_start = std::chrono::steady_clock::now();
+
+        //get encoder data
         odrive.updateEncoderReadings(0);
         const double theta = odrive.getEncoderPosition();
+
+        //spring displacement
         double displacement = 0;
 
         //get motor current
@@ -65,24 +87,23 @@ int main(int argc, char* argv[]) {
             //command motor
             odrive.sendTorqueCommand(0,-torque);
         }
+
         //deactivate spring
         else {
             if(odrive.getInputTorque() != 0) {
                 odrive.sendTorqueCommand(0,0);
             }
         }
-        if (current >= 1.5) {
-            std::cout << "Input Motor Torque: " << torque << std::endl;
-            std::cout << "Motor Current: " << current << std::endl << std::endl;
-        }
 
         //track time
-        std::chrono::steady_clock::time_point stop = std::chrono::steady_clock::now();
-        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(stop-start);
-        double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(stop-program_start).count();
+        std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
+        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-loop_start);
+        double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-program_start).count();
 
         //write to csv
-        datafile << time_stamp << "," << current << "," << torque << "," << theta << "\n";
+        if (loggingEnabled) {
+            datafile << time_stamp << "," << current << "," << torque << "," << theta << "\n";
+        }
 
         //enforce loop rate
         if (time_span.count() < loop_rate) {
@@ -90,6 +111,8 @@ int main(int argc, char* argv[]) {
             sleep(sleeptime);
         }
     }
+
+    //close file
     datafile.close();
     return 1;
 }

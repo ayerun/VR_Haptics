@@ -1,8 +1,8 @@
 #include <motor_communication.hpp>
 #include <iostream>
 
-Odrive::Odrive(const char name[], unsigned int baud) {
-    board = uart_open(name, baud, UART_FLOW_NONE, UART_PARITY_NONE);
+Odrive::Odrive(const std::string &name, unsigned int baud) {
+    board = uart_open(name.c_str(), baud, UART_FLOW_NONE, UART_PARITY_NONE);
 }
 
 bool Odrive::updateVoltage() {
