@@ -12,10 +12,10 @@
 #include <array>
 #include <cmath>
 
-std::tuple<double,double,double> quaternion2rpy(XrQuaternionf q) {
-    double r = atan2(2.0*(q.y*q.z+q.w*q.x),q.w*q.w-q.x*q.x-q.y*q.y+q.z*q.z);
+std::tuple<double,double,double> quaternion2rpy(const XrQuaternionf& q) {
+    double r = atan2(2.0*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
     double p = asin(-2.0*(q.x*q.z - q.w*q.y));
-    double y = atan2(2.0*(q.x*q.y+q.w*q.z),q.w*q.w+q.x*q.x-q.y*q.y-q.z*q.z);
+    double y = atan2(2.0*(q.x*q.y + q.w*q.z), q.w*q.w + q.x*q.x - q.y*q.y - q.z*q.z);
     return std::make_tuple(r,p,y);
 }
 

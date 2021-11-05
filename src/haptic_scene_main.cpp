@@ -5,22 +5,46 @@
 #include "graphicsplugin.h"
 #include "openxr_program.h"
 #include "motor_communication.hpp"
-#include <signal.h>
-
-void signal_callback(int signum) {
-   std::cout << "Caught signal " << signum << std::endl;
-   std::cout << "Terminating Program" << std::endl;
-//    exit(signum);
-}
+#include <fstream>
 
 int main(int argc, char* argv[]) {
-    // Register signal and signal callback
-    signal(SIGINT, signal_callback);
+
+    //logging
+    std::string filename;
+    std::ofstream datafile;
+    bool loggingEnabled = false;
+
+    //Odrive port
+    std::string portname;
+    std::string default_port = "/dev/ttyACM2";
+    
+    //Parse command line arguements
+    if (argc == 1) {
+        portname = default_port;
+    }
+    else if (argc == 2) {
+        filename = argv[1];
+        portname = default_port;
+        loggingEnabled = true;
+    } 
+    else if (argc == 3) {
+        filename = argv[1];
+        portname = argv[2];
+        loggingEnabled = true;
+    }
+    else {
+        std::cout << "Invalid number of command line arguements" << std::endl;
+        return 0;
+    }
+
+    if (loggingEnabled) {    
+        datafile.open(filename);
+    }
 
     //Odrive setup
-    Odrive odrive("/dev/ttyACM1", 115200);
+    Odrive odrive(portname, 115200);
     odrive.zeroEncoderPosition(0);
-    odrive.setClosedLoopControl(0);
+
 
     // Set graphics plugin, VR form factor, and VR view configuration
     std::shared_ptr<Options> options = std::make_shared<Options>();
@@ -44,7 +68,8 @@ int main(int argc, char* argv[]) {
         program->InitializeSession();
         program->CreateSwapchains();
 
-        double k = 0.5;
+        //constants
+        double k = 0.005;
         double torque = 0;
 
         bool exitRenderLoop = false;
@@ -59,40 +84,39 @@ int main(int argc, char* argv[]) {
                 XrTime displayTime = program->RenderFrame();
                 XrSpaceLocation pos = program->getControllerSpace(displayTime);
                 auto rpy = quaternion2rpy(pos.pose.orientation);
-                double yaw = std::get<2>(rpy);
-                double theta = yaw/(4.0*PI)+0.5;
-                Log::Write(Log::Level::Error, "Theta: " + std::to_string(theta));
+
+                double roll = std::get<0>(rpy)*(180/PI);
+                double pitch = std::get<1>(rpy)*(180/PI);   //this is it
+                double yaw = std::get<2>(rpy)*(180/PI);
+                // double theta = yaw/(4.0*PI)+0.5;
+                // Log::Write(Log::Level::Error, "Roll: " + std::to_string(roll));
+                // Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
+                // Log::Write(Log::Level::Error, "Yaw: " + std::to_string(yaw));
+
+                //spring displacement
+                double displacement = 0;
 
                 //engage spring
-                if (theta > 0.4) {
+                if (pitch > 0) {
+                    
+                    // Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
 
                     //calculate and clamp torque
-                    theta -= 0.4;
-                    torque = k*theta;
+                    torque = k*pitch;
                     torque = std::max(0.0,std::min(torque,0.5));
 
                     //command motor
                     odrive.sendTorqueCommand(0,-torque);
 
                     //get motor current
-                    // odrive.updateMotorCurrent(0);
+                    odrive.updateMotorCurrent(0);
                     double current = odrive.getCurrent();
-
-                    //check if current limit has been reached
-                    if (current >= 1.5) {
-                        std::cout << "Input Motor Torque: " << torque << std::endl;
-                        std::cout << "Motor Current: " << current << std::endl << std::endl;
-                    }
                 }
 
                 //deactivate spring
                 else {
                     if(odrive.getInputTorque() != 0) {
-                        bool safe = odrive.sendTorqueCommand(0,0);
-                        if(safe) {
-                            //set state to closed loop control in case of motor error
-                            odrive.setClosedLoopControl(0);
-                        }
+                        odrive.sendTorqueCommand(0,0);
                     }
                 }
             }

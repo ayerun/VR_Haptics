@@ -24,8 +24,9 @@ int main(int argc, char* argv[]) {
 
     //Odrive port
     std::string portname;
-    std::string default_port = "/dev/ttyACM0";
+    std::string default_port = "/dev/ttyACM1";
     
+    //Parse command line arguements
     if (argc == 1) {
         portname = default_port;
     }

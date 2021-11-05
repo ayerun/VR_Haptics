@@ -6,7 +6,7 @@
 
 #define PI 3.14159265358979323846
 
-std::tuple<double,double,double> quaternion2rpy(XrQuaternionf q);
+std::tuple<double,double,double> quaternion2rpy(const XrQuaternionf& q);
 
 struct IOpenXrProgram {
     virtual ~IOpenXrProgram() = default;
