@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 
     //Odrive port
     std::string portname;
-    std::string default_port = "/dev/ttyACM2";
+    std::string default_port = "/dev/ttyACM1";
     
     //Parse command line arguements
     if (argc == 1) {
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         program->CreateSwapchains();
 
         //constants
-        double k = 0.005;
+        double k = 0.1666667;
         double torque = 0;
 
         bool exitRenderLoop = false;
@@ -93,20 +93,25 @@ int main(int argc, char* argv[]) {
                 // Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
                 // Log::Write(Log::Level::Error, "Yaw: " + std::to_string(yaw));
 
+                //get encoder data
+                odrive.updateEncoderReadings(0);
+                const double theta = odrive.getEncoderPosition();
+                // Log::Write(Log::Level::Error, "Pos: " + std::to_string(theta));
+
                 //spring displacement
                 double displacement = 0;
 
                 //engage spring
-                if (pitch > 0) {
+                if (pitch < 0 && pitch > -45) {
                     
-                    // Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
+                    Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
 
                     //calculate and clamp torque
                     torque = k*pitch;
-                    torque = std::max(0.0,std::min(torque,0.5));
+                    torque = std::min(0.0,std::max(torque,-0.5));
 
                     //command motor
-                    odrive.sendTorqueCommand(0,-torque);
+                    odrive.sendTorqueCommand(0,torque);
 
                     //get motor current
                     odrive.updateMotorCurrent(0);
@@ -114,16 +119,10 @@ int main(int argc, char* argv[]) {
                 }
 
                 //deactivate spring
-                else {
-                    if(odrive.getInputTorque() != 0) {
-                        odrive.sendTorqueCommand(0,0);
-                    }
-                }
+                else odrive.sendTorqueCommand(0,0);
             }
-            else {
-                // Throttle loop since xrWaitFrame won't be called.
-                std::this_thread::sleep_for(std::chrono::milliseconds(250));
-            }
+            // Throttle loop since xrWaitFrame won't be called.
+            else std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
 
     } while (requestRestart);
