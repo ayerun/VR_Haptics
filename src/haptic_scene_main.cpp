@@ -6,6 +6,7 @@
 #include "openxr_program.h"
 #include "motor_communication.hpp"
 #include <fstream>
+#include <Eigen/Geometry>
 
 int main(int argc, char* argv[]) {
 
@@ -81,45 +82,50 @@ int main(int argc, char* argv[]) {
 
             if (program->IsSessionRunning()) {
                 program->PollActions();
+
+
                 XrTime displayTime = program->RenderFrame();
                 XrSpaceLocation pos = program->getControllerSpace(displayTime);
-                auto rpy = quaternion2rpy(pos.pose.orientation);
 
-                double roll = std::get<0>(rpy)*(180/PI);
-                double pitch = std::get<1>(rpy)*(180/PI);   //this is it
-                double yaw = std::get<2>(rpy)*(180/PI);
-                // double theta = yaw/(4.0*PI)+0.5;
-                // Log::Write(Log::Level::Error, "Roll: " + std::to_string(roll));
-                // Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
-                // Log::Write(Log::Level::Error, "Yaw: " + std::to_string(yaw));
+                //convert openXR types to Eigne
+                Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pos.pose.orientation.w,pos.pose.orientation.x,pos.pose.orientation.y,pos.pose.orientation.z);
+                Eigen::Vector3f controller_position;
+                controller_position << pos.pose.position.x, pos.pose.position.y, pos.pose.position.z;
+
+                //create transformation matrix
+                Eigen::Transform<float,3,Eigen::Affine> Twc;
+                Twc.setIdentity();
+                Twc.rotate(controller_orientation);
+                Twc.translate(controller_position);
+                std::cout << Twc.translation() << std::endl << std::endl;
+                
 
                 //get encoder data
                 odrive.updateEncoderReadings(0);
                 const double theta = odrive.getEncoderPosition();
-                // Log::Write(Log::Level::Error, "Pos: " + std::to_string(theta));
 
                 //spring displacement
                 double displacement = 0;
 
                 //engage spring
-                if (pitch < 0 && pitch > -45) {
+                // if (pitch < 0 && pitch > -45) {
                     
-                    Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
+                //     Log::Write(Log::Level::Error, "Pitch: " + std::to_string(pitch));
 
-                    //calculate and clamp torque
-                    torque = k*pitch;
-                    torque = std::min(0.0,std::max(torque,-0.5));
+                //     //calculate and clamp torque
+                //     torque = k*pitch;
+                //     torque = std::min(0.0,std::max(torque,-0.5));
 
-                    //command motor
-                    odrive.sendTorqueCommand(0,torque);
+                //     //command motor
+                //     odrive.sendTorqueCommand(0,torque);
 
-                    //get motor current
-                    odrive.updateMotorCurrent(0);
-                    double current = odrive.getCurrent();
-                }
+                //     //get motor current
+                //     odrive.updateMotorCurrent(0);
+                //     double current = odrive.getCurrent();
+                // }
 
-                //deactivate spring
-                else odrive.sendTorqueCommand(0,0);
+                // //deactivate spring
+                // else odrive.sendTorqueCommand(0,0);
             }
             // Throttle loop since xrWaitFrame won't be called.
             else std::this_thread::sleep_for(std::chrono::milliseconds(250));

@@ -10,7 +10,8 @@ endif()
 
 find_package(OpenXR REQUIRED)
 find_package(Vulkan REQUIRED)
-find_package(nuhal)
+find_package(nuhal REQUIRED)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 add_definitions(-DXR_USE_GRAPHICS_API_VULKAN)
 
@@ -91,7 +92,7 @@ install(TARGETS scene
 
 # Haptic Scene - Rendering scene while controller motor
 add_executable(haptic_scene
-    "src/haptic_scene_main.cpp"
+    src/haptic_scene_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}
     ${LOCAL_GRAPHICS_HEADERS}
     ${LOCAL_HAPTICS_SOURCE}
@@ -101,11 +102,13 @@ add_executable(haptic_scene
 add_dependencies(haptic_scene run_glsl_compiles)
 
 target_include_directories(haptic_scene 
+    PRIVATE Eigen3::Eigen
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_link_libraries(haptic_scene 
     nuhal
+    Eigen3::Eigen
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
