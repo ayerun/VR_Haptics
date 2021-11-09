@@ -91,30 +91,30 @@ install(TARGETS scene
 
 
 # Haptic Scene - Rendering scene while controller motor
-add_executable(haptic_scene
-    src/haptic_scene_main.cpp
+add_executable(vr_spring
+    src/vr_spring_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}
     ${LOCAL_GRAPHICS_HEADERS}
     ${LOCAL_HAPTICS_SOURCE}
     ${LOCAL_HAPTICS_HEADERS}
     ${VULKAN_SHADERS})
 
-add_dependencies(haptic_scene run_glsl_compiles)
+add_dependencies(vr_spring run_glsl_compiles)
 
-target_include_directories(haptic_scene 
+target_include_directories(vr_spring 
     PRIVATE Eigen3::Eigen
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-target_link_libraries(haptic_scene 
+target_link_libraries(vr_spring 
     nuhal
     Eigen3::Eigen
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
-install(TARGETS haptic_scene
+install(TARGETS vr_spring
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT haptic_scene)
+    COMPONENT vr_spring)
 
 
 # Stop Motor - Send torque command of 0
@@ -146,3 +146,18 @@ target_link_libraries(encoder_spring
 install(TARGETS encoder_spring
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT encoder_spring)
+
+# Noisy Encoder Spring Demo
+add_executable(noisy_encoder_spring
+    src/noisy_encoder_spring_main.cpp
+    src/haptics/motor_communication.cpp
+    include/haptics/motor_communication.hpp
+)
+
+target_link_libraries(noisy_encoder_spring
+    nuhal
+)
+
+install(TARGETS noisy_encoder_spring
+RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+COMPONENT noisy_encoder_spring)

@@ -45,18 +45,20 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    if (loggingEnabled) {    
-        datafile.open(filename);
-    }
-
     //Odrive setup
     Odrive odrive(portname, 115200);
     odrive.zeroEncoderPosition(0);
 
     //constants
-    double k = 60;
+    double k = 0.1666667;
     double torque = 0;
-    double loop_rate = 0.001;
+    double frequency = 140;
+    double loop_rate = 1/frequency;
+
+    if (loggingEnabled) {    
+        datafile.open(filename);
+        datafile << "Time (s)" << "," << " Current (A)" << "," << " Torque (Nm)" << "," << " Angle (degrees)" << "," << " K = " << k  << " (N/deg)" <<"\n";
+    }
 
     //start timer
     std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
@@ -68,7 +70,7 @@ int main(int argc, char* argv[]) {
 
         //get encoder data
         odrive.updateEncoderReadings(0);
-        const double theta = odrive.getEncoderPosition();
+        const double theta = odrive.getEncoderPosition()*360;
 
         //spring displacement
         double displacement = 0;
@@ -78,10 +80,10 @@ int main(int argc, char* argv[]) {
         double current = odrive.getCurrent();
 
         //engage spring
-        if (theta > 1) {
+        if (theta > 360) {
 
             //calculate and clamp torque
-            displacement = theta-1;
+            displacement = theta-360;
             torque = k*displacement;
             torque = std::max(0.0,std::min(torque,0.5));
 
@@ -90,11 +92,7 @@ int main(int argc, char* argv[]) {
         }
 
         //deactivate spring
-        else {
-            if(odrive.getInputTorque() != 0) {
-                odrive.sendTorqueCommand(0,0);
-            }
-        }
+        else odrive.sendTorqueCommand(0,0);
 
         //track time
         std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
@@ -103,13 +101,14 @@ int main(int argc, char* argv[]) {
 
         //write to csv
         if (loggingEnabled) {
-            datafile << time_stamp << "," << current << "," << torque << "," << theta << "\n";
+            datafile << time_stamp << "," << current << "," << torque << "," << theta-360 << "\n";
         }
 
         //enforce loop rate
         if (time_span.count() < loop_rate) {
             double sleeptime = loop_rate-time_span.count();
-            sleep(sleeptime);
+            useconds_t microsleeptime = sleeptime*1e6;
+            usleep(microsleeptime);
         }
     }
 
