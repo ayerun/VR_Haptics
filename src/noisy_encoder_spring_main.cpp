@@ -59,8 +59,9 @@ int main(int argc, char* argv[]) {
 
     //constants
     double k = 0.1666667;   //[Nm/deg]
-    double frequency = 120; //[Hz]
-    double noise_sd = 0.5;  //noise - standard deviation of normal distribution
+    double b = 0;        //[(Nm*s)/deg]
+    double frequency = 144; //[Hz]
+    double noise_sd = 0;  //noise - standard deviation of normal distribution
 
     double loop_rate = 1/frequency;
     double torque = 0;
@@ -82,6 +83,8 @@ int main(int argc, char* argv[]) {
         //get encoder data and add noise
         odrive.updateEncoderReadings(0);
         const double theta = odrive.getEncoderPosition()*360+encoder_noise(get_random());
+        const double vel = odrive.getEncoderVelocity()*360;
+        // std::cout << vel << std::endl;
 
         //spring displacement
         double displacement = 0;
@@ -95,7 +98,7 @@ int main(int argc, char* argv[]) {
 
             //calculate and clamp torque
             displacement = theta-360;
-            torque = k*displacement;
+            torque = k*displacement+b*vel;
             torque = std::max(0.0,std::min(torque,0.5));
 
             //command motor
