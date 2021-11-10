@@ -50,9 +50,10 @@ int main(int argc, char* argv[]) {
     odrive.zeroEncoderPosition(0);
 
     //constants
-    double k = 0.1666667;
+    double k = 0.1666667;   //[Nm/deg]
+    double frequency = 140; //[Hz]
+
     double torque = 0;
-    double frequency = 140;
     double loop_rate = 1/frequency;
 
     if (loggingEnabled) {    

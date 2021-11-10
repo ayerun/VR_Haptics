@@ -44,30 +44,6 @@ include_directories("include/graphics" "include/haptics" ${CMAKE_CURRENT_BINARY_
 compile_glsl(run_glsl_compiles ${VULKAN_SHADERS})
 
 
-
-# Tracking - Getting Controller position and velocity
-add_executable(tracking
-    "src/tracking_main.cpp"
-    ${LOCAL_GRAPHICS_SOURCE}
-    ${LOCAL_GRAPHICS_HEADERS}
-    ${VULKAN_SHADERS})
-
-add_dependencies(tracking run_glsl_compiles)
-
-target_include_directories(tracking 
-    PRIVATE OpenXR::Headers
-    PRIVATE ${Vulkan_INCLUDE_DIRS})
-
-target_link_libraries(tracking 
-    OpenXR::openxr_loader
-    ${Vulkan_LIBRARY})
-
-install(TARGETS tracking
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT scene)
-
-
-
 # Scene - Rendering scene
 add_executable(scene
     "src/scene_main.cpp"
@@ -90,7 +66,7 @@ install(TARGETS scene
     COMPONENT scene)
 
 
-# Haptic Scene - Rendering scene while controller motor
+# VR Spring - render wall as spring based on VR tracking
 add_executable(vr_spring
     src/vr_spring_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}

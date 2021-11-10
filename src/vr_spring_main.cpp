@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
         program->CreateSwapchains();
 
         //constants
-        double k = 0.1666667;
+        double k = 0.1666667;   //[Nm/deg]
         double torque = 0;
 
         if (loggingEnabled) {    
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
                 double displacement = 0;
 
                 //engage spring
-                if (ang > 0) {
+                if (ang > 0 && ang < 90) {
 
                     //calculate and clamp torque
                     torque = k*ang;

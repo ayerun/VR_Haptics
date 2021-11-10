@@ -57,14 +57,14 @@ int main(int argc, char* argv[]) {
     Odrive odrive(portname, 115200);
     odrive.zeroEncoderPosition(0);
 
-    //noise
-    std::normal_distribution<> encoder_noise{0,0.01};
-
     //constants
-    double k = 0.1666667;
-    double torque = 0;
-    double frequency = 140;
+    double k = 0.1666667;   //[Nm/deg]
+    double frequency = 120; //[Hz]
+    double noise_sd = 0.5;  //noise - standard deviation of normal distribution
+
     double loop_rate = 1/frequency;
+    double torque = 0;
+    std::normal_distribution<> encoder_noise{0,noise_sd};
 
     if (loggingEnabled) {    
         datafile.open(filename);
