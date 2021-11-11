@@ -6,7 +6,11 @@
 
 #define PI 3.14159265358979323846
 
-std::tuple<double,double,double> quaternion2rpy(const XrQuaternionf& q);
+namespace Side {
+const int LEFT = 0;
+const int RIGHT = 1;
+const int COUNT = 2;
+}  // namespace Side
 
 struct IOpenXrProgram {
     virtual ~IOpenXrProgram() = default;
@@ -40,7 +44,8 @@ struct IOpenXrProgram {
     // Create and submit a frame.
     virtual XrTime RenderFrame() = 0;
 
-    virtual XrSpaceLocation getControllerSpace(XrTime predictedDisplayTime) = 0;
+    virtual XrSpaceLocation getControllerSpace(XrTime predictedDisplayTime, int hand) = 0;
+    virtual bool isHandActive(int hand) = 0;
 };
 
 struct Swapchain {

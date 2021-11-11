@@ -12,19 +12,6 @@
 #include <array>
 #include <cmath>
 
-std::tuple<double,double,double> quaternion2rpy(const XrQuaternionf& q) {
-    double r = atan2(2.0*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
-    double p = asin(-2.0*(q.x*q.z - q.w*q.y));
-    double y = atan2(2.0*(q.x*q.y + q.w*q.z), q.w*q.w + q.x*q.x - q.y*q.y - q.z*q.z);
-    return std::make_tuple(r,p,y);
-}
-
-namespace Side {
-const int LEFT = 0;
-const int RIGHT = 1;
-const int COUNT = 2;
-}  // namespace Side
-
 namespace {
 
 #if !defined(XR_USE_PLATFORM_WIN32)
@@ -354,6 +341,11 @@ struct OpenXrProgram : IOpenXrProgram {
         for (XrReferenceSpaceType space : spaces) {
             Log::Write(Log::Level::Verbose, Fmt("  Name: %s", to_string(space)));
         }
+    }
+
+    bool isHandActive(int hand) {
+        if (m_input.handActive[hand] == XR_TRUE) return true;
+        else return false;
     }
 
     struct InputState {
@@ -917,8 +909,9 @@ struct OpenXrProgram : IOpenXrProgram {
         return frameState.predictedDisplayTime;
     }
 
-    XrSpaceLocation getControllerSpace(XrTime predictedDisplayTime) override {
-        auto hand = Side::RIGHT;
+    XrSpaceLocation getControllerSpace(XrTime predictedDisplayTime,int hand) override {
+        // auto hand = Side::RIGHT;
+        // auto hand = hand;
         XrSpaceVelocity spaceVelocity {XR_TYPE_SPACE_VELOCITY};
         XrSpaceLocation spaceLocation{XR_TYPE_SPACE_LOCATION, &spaceVelocity};
         XrResult res = xrLocateSpace(m_input.handSpace[hand], m_appSpace, predictedDisplayTime, &spaceLocation);

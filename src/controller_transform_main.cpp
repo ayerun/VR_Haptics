@@ -42,7 +42,6 @@ int main(int argc, char* argv[]) {
     Odrive odrive(portname, 115200);
     odrive.zeroEncoderPosition(0);
 
-
     // Set graphics plugin, VR form factor, and VR view configuration
     std::shared_ptr<Options> options = std::make_shared<Options>();
     options->GraphicsPlugin = "Vulkan2";
@@ -66,7 +65,9 @@ int main(int argc, char* argv[]) {
         program->CreateSwapchains();
 
         //constants
-        double k = 0.1666667;   //[Nm/deg]
+        double k = 0.2;   //[Nm/deg]
+        int hand = Side::LEFT;
+
         double torque = 0;
 
         if (loggingEnabled) {    
@@ -76,6 +77,10 @@ int main(int argc, char* argv[]) {
 
         //start timer
         std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
+
+        Eigen::Transform<float,3,Eigen::Affine> Tww_;
+        Tww_.setIdentity();
+        bool originSet = false;
 
         bool exitRenderLoop = false;
         while (!exitRenderLoop) {
@@ -89,7 +94,7 @@ int main(int argc, char* argv[]) {
 
 
                 XrTime displayTime = program->RenderFrame();
-                XrSpaceLocation pos = program->getControllerSpace(displayTime,Side::LEFT);
+                XrSpaceLocation pos = program->getControllerSpace(displayTime, hand);
 
                 //convert openXR types to Eigen
                 Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pos.pose.orientation.w,pos.pose.orientation.x,pos.pose.orientation.y,pos.pose.orientation.z);
@@ -101,47 +106,19 @@ int main(int argc, char* argv[]) {
                 Twc.setIdentity();
                 Twc.rotate(controller_orientation);
 
-                //compute rotation about y axis in degrees
-                float ang = atan2(Twc.rotation()(0,0),Twc.rotation()(2,0))*(180/PI);
-                std::cout << ang << std::endl;
-
                 //translate controller
-                // Twc.translate(controller_position);
+                Twc.translate(controller_position);
+
+                //Define w_ frame at controller start position
+                if (!originSet && program->isHandActive(hand)) {
+                    Tww_ = Twc;
+                    originSet = true;
+                }
+                else if (originSet) {
+                    auto Tw_c = Tww_.inverse()*Twc;
+                    std::cout << Tw_c.translation() << std::endl << std::endl;
+                }
                 
-
-                //get encoder data
-                odrive.updateEncoderReadings(0);
-                const double theta = odrive.getEncoderPosition();
-
-                //get motor current
-                odrive.updateMotorCurrent(0);
-                double current = odrive.getCurrent();
-
-                //spring displacement
-                double displacement = 0;
-
-                //engage spring
-                if (ang > 0 && ang < 90) {
-
-                    //calculate and clamp torque
-                    torque = k*ang;
-                    torque = std::max(0.0,std::min(torque,0.5));
-
-                    //command motor
-                    odrive.sendTorqueCommand(0,-torque);
-                }
-
-                //deactivate spring
-                else odrive.sendTorqueCommand(0,0);
-
-                //track time
-                std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
-                double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-program_start).count();
-
-                 //write to csv
-                if (loggingEnabled) {
-                    datafile << time_stamp << "," << current << "," << torque << "," << ang << "\n";
-                }
             }
             // Throttle loop since xrWaitFrame won't be called.
             else std::this_thread::sleep_for(std::chrono::milliseconds(250));

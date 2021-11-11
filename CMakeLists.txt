@@ -93,6 +93,33 @@ install(TARGETS vr_spring
     COMPONENT vr_spring)
 
 
+# VR Spring - render wall as spring based on VR tracking
+add_executable(controller_transform
+    src/controller_transform_main.cpp
+    ${LOCAL_GRAPHICS_SOURCE}
+    ${LOCAL_GRAPHICS_HEADERS}
+    ${LOCAL_HAPTICS_SOURCE}
+    ${LOCAL_HAPTICS_HEADERS}
+    ${VULKAN_SHADERS})
+
+add_dependencies(controller_transform run_glsl_compiles)
+
+target_include_directories(controller_transform 
+    PRIVATE Eigen3::Eigen
+    PRIVATE OpenXR::Headers
+    PRIVATE ${Vulkan_INCLUDE_DIRS})
+
+target_link_libraries(controller_transform 
+    nuhal
+    Eigen3::Eigen
+    OpenXR::openxr_loader
+    ${Vulkan_LIBRARY})
+
+install(TARGETS controller_transform
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT controller_transform)
+
+
 # Stop Motor - Send torque command of 0
 add_executable(stop_motor
     src/stop_motor_main.cpp
