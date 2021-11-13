@@ -10,14 +10,17 @@
 
 int main(int argc, char* argv[]) {
 
-    //logging
-    std::string filename;
-    std::ofstream datafile;
-    bool loggingEnabled = false;
-
     //Odrive port
     std::string portname;
     std::string default_port = "/dev/ttyACM1";
+
+    //Controller
+    int hand = Side::RIGHT;
+
+    //Logging
+    std::string filename;
+    std::ofstream datafile;
+    bool loggingEnabled = false;
     
     //Parse command line arguements
     if (argc == 1) {
@@ -66,7 +69,6 @@ int main(int argc, char* argv[]) {
 
         //constants
         double k = 0.2;   //[Nm/deg]
-        int hand = Side::LEFT;
 
         double torque = 0;
 

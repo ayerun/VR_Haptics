@@ -10,14 +10,17 @@
 
 int main(int argc, char* argv[]) {
 
+    //Odrive port
+    std::string portname;
+    std::string default_port = "/dev/ttyACM1";
+
+    //Controller
+    int hand = Side::RIGHT;
+
     //logging
     std::string filename;
     std::ofstream datafile;
     bool loggingEnabled = false;
-
-    //Odrive port
-    std::string portname;
-    std::string default_port = "/dev/ttyACM1";
     
     //Parse command line arguements
     if (argc == 1) {
@@ -66,12 +69,12 @@ int main(int argc, char* argv[]) {
         program->CreateSwapchains();
 
         //constants
-        double k = 0.1666667;   //[Nm/deg]
+        double k = 0.4;   //[Nm/deg]
         double torque = 0;
 
         if (loggingEnabled) {    
             datafile.open(filename);
-            datafile << "Time (s)" << "," << " Current (A)" << "," << " Torque (Nm)" << "," << " Angle (degrees)" << "," << " K = " << k  << " (N/deg)" <<"\n";
+            datafile << "Time (s)" << "," << " Current (A)" << "," << " Torque (Nm)" << "," << " VR Angle (degrees)" << "," << "Encoder Angle (degrees)" << "," << " K = " << k  << " (N/deg)" <<"\n";
         }
 
         //start timer
@@ -89,7 +92,7 @@ int main(int argc, char* argv[]) {
 
 
                 XrTime displayTime = program->RenderFrame();
-                XrSpaceLocation pos = program->getControllerSpace(displayTime,Side::LEFT);
+                XrSpaceLocation pos = program->getControllerSpace(displayTime,hand);
 
                 //convert openXR types to Eigen
                 Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pos.pose.orientation.w,pos.pose.orientation.x,pos.pose.orientation.y,pos.pose.orientation.z);
@@ -111,7 +114,7 @@ int main(int argc, char* argv[]) {
 
                 //get encoder data
                 odrive.updateEncoderReadings(0);
-                const double theta = odrive.getEncoderPosition();
+                const double theta = odrive.getEncoderPosition()*360;
 
                 //get motor current
                 odrive.updateMotorCurrent(0);
@@ -140,7 +143,7 @@ int main(int argc, char* argv[]) {
 
                  //write to csv
                 if (loggingEnabled) {
-                    datafile << time_stamp << "," << current << "," << torque << "," << ang << "\n";
+                    datafile << time_stamp << "," << current << "," << torque << "," << ang << "," << theta << "\n";
                 }
             }
             // Throttle loop since xrWaitFrame won't be called.
