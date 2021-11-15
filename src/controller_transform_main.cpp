@@ -10,40 +10,8 @@
 
 int main(int argc, char* argv[]) {
 
-    //Odrive port
-    std::string portname;
-    std::string default_port = "/dev/ttyACM1";
-
     //Controller
-    int hand = Side::RIGHT;
-
-    //Logging
-    std::string filename;
-    std::ofstream datafile;
-    bool loggingEnabled = false;
-    
-    //Parse command line arguements
-    if (argc == 1) {
-        portname = default_port;
-    }
-    else if (argc == 2) {
-        filename = argv[1];
-        portname = default_port;
-        loggingEnabled = true;
-    } 
-    else if (argc == 3) {
-        filename = argv[1];
-        portname = argv[2];
-        loggingEnabled = true;
-    }
-    else {
-        std::cout << "Invalid number of command line arguements" << std::endl;
-        return 0;
-    }
-
-    //Odrive setup
-    Odrive odrive(portname, 115200);
-    odrive.zeroEncoderPosition(0);
+    int hand = Side::LEFT;
 
     // Set graphics plugin, VR form factor, and VR view configuration
     std::shared_ptr<Options> options = std::make_shared<Options>();
@@ -67,19 +35,10 @@ int main(int argc, char* argv[]) {
         program->InitializeSession();
         program->CreateSwapchains();
 
-        //constants
-        double k = 0.2;   //[Nm/deg]
-
-        double torque = 0;
-
-        if (loggingEnabled) {    
-            datafile.open(filename);
-            datafile << "Time (s)" << "," << " Current (A)" << "," << " Torque (Nm)" << "," << " Angle (degrees)" << "," << " K = " << k  << " (N/deg)" <<"\n";
-        }
-
         //start timer
         std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
 
+        //world to world prime
         Eigen::Transform<float,3,Eigen::Affine> Tww_;
         Tww_.setIdentity();
         bool originSet = false;
@@ -100,25 +59,31 @@ int main(int argc, char* argv[]) {
 
                 //convert openXR types to Eigen
                 Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pos.pose.orientation.w,pos.pose.orientation.x,pos.pose.orientation.y,pos.pose.orientation.z);
-                Eigen::Vector3f controller_position;
-                controller_position << pos.pose.position.x, pos.pose.position.y, pos.pose.position.z;
+                Eigen::Vector3f controller_position(pos.pose.position.x, pos.pose.position.y, pos.pose.position.z);
 
-                //create Rotate identity matrix by quaternion
+                //create identity matrix
                 Eigen::Transform<float,3,Eigen::Affine> Twc;
                 Twc.setIdentity();
-                Twc.rotate(controller_orientation);
 
-                //translate controller
+                //translate then rotate to create Twc
                 Twc.translate(controller_position);
+                Twc.rotate(controller_orientation);
 
                 //Define w_ frame at controller start position
                 if (!originSet && program->isHandActive(hand)) {
-                    Tww_ = Twc;
+                    //rotate controller to make +Z up
+                    Eigen::Matrix3f rot;
+                    rot <<  1,0,0,
+                            0,-1,0,
+                            0,0,-1;
+                    Tww_ = Twc.rotate(rot);
                     originSet = true;
                 }
+
+                //calculate controller position in w_ frame
                 else if (originSet) {
                     auto Tw_c = Tww_.inverse()*Twc;
-                    std::cout << Tw_c.translation() << std::endl << std::endl;
+                    std::cout << Tw_c.translation()(2) << std::endl << std::endl;
                 }
                 
             }
