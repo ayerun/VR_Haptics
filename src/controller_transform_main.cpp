@@ -9,33 +9,50 @@
 #include <computational_geometry.hpp>
 #include <Eigen/Geometry>
 
+double calculateTorque(double displacement, double theta, double k) {
+    if (displacement < 0) {
+
+        //calculate toque
+        double torque = abs(k*displacement);
+
+        //clamp torque
+        torque = std::min(torque,0.5);
+
+        //reverse direction based on controller angle
+        if (theta > geometry::PI/2) {
+            torque *= -1;
+        }
+        return torque;
+    }
+    else return 0;
+}
+
+Eigen::Transform<float,3,Eigen::Affine> createTransform(XrPosef pose) {
+    //convert openXR types to Eigen
+    Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pose.orientation.w,pose.orientation.x,pose.orientation.y,pose.orientation.z);
+    Eigen::Vector3f controller_position(pose.position.x, pose.position.y, pose.position.z);
+
+    //create identity matrix
+    Eigen::Transform<float,3,Eigen::Affine> Twc;
+    Twc.setIdentity();
+
+    //translate then rotate to create Twc
+    Twc.translate(controller_position);
+    Twc.rotate(controller_orientation);
+    
+    return Twc;
+}
+
 int main(int argc, char* argv[]) {
 
     //Constants
     int hand = Side::LEFT;  //controller
-    double pointer_length = 0.25;
-    double ceiling_height = 0.45;
+    double pointer_length = 0.18;
+    double floor_height = 0.1;
     double k = 100;
 
-    double torque = 0;
-
     //Odrive port
-    std::string portname;
-    std::string default_port = "/dev/ttyACM1";
-
-    //logging
-    std::string filename;
-    std::ofstream datafile;
-    bool loggingEnabled = false;
-    
-    //Parse command line arguements
-    if (argc == 1) {
-        portname = default_port;
-    }
-    else if (argc > 1) {
-        std::cout << "Invalid number of command line arguements" << std::endl;
-        return 0;
-    }
+    std::string portname = "/dev/ttyACM1";
 
     //Odrive setup
     Odrive odrive(portname, 115200);
@@ -63,9 +80,6 @@ int main(int argc, char* argv[]) {
         program->InitializeSession();
         program->CreateSwapchains();
 
-        //start timer
-        std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
-
         //world to world prime
         Eigen::Transform<float,3,Eigen::Affine> Tww_;
         Tww_.setIdentity();
@@ -81,25 +95,16 @@ int main(int argc, char* argv[]) {
             if (program->IsSessionRunning()) {
                 program->PollActions();
 
-
-                XrTime displayTime = program->RenderFrame();
-                XrSpaceLocation pos = program->getControllerSpace(displayTime, hand);
-
                 //get encoder data
                 odrive.updateEncoderReadings(0);
                 const double theta = geometry::normalize_angle(geometry::rev2rad(odrive.getEncoderPosition()));
 
-                //convert openXR types to Eigen
-                Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pos.pose.orientation.w,pos.pose.orientation.x,pos.pose.orientation.y,pos.pose.orientation.z);
-                Eigen::Vector3f controller_position(pos.pose.position.x, pos.pose.position.y, pos.pose.position.z);
+                //Render and get controller data
+                XrTime displayTime = program->RenderFrame();
+                XrSpaceLocation pos = program->getControllerSpace(displayTime, hand);
 
-                //create identity matrix
-                Eigen::Transform<float,3,Eigen::Affine> Twc;
-                Twc.setIdentity();
-
-                //translate then rotate to create Twc
-                Twc.translate(controller_position);
-                Twc.rotate(controller_orientation);
+                //Create controller tranformation matrix
+                auto Twc = createTransform(pos.pose);
 
                 //Define w_ frame at controller start position
                 if (!originSet && program->isHandActive(hand)) {
@@ -119,28 +124,11 @@ int main(int argc, char* argv[]) {
 
                     //calculate displacement
                     double controller_height = Tw_c.translation()(2);
-                    double displacement = controller_height+pointer_length*sin(theta)-ceiling_height;
+                    double displacement = controller_height+pointer_length*sin(theta)-floor_height;
                     std::cout << displacement << std::endl;
 
-                    if (displacement > 0) {
-
-                        //calculate toque
-                        torque = abs(k*displacement);
-
-                        //clamp torque
-                        torque = std::min(torque,0.5);
-
-                        //reverse direction based on controller angle
-                        if (theta < geometry::PI/2) {
-                            torque *= -1;
-                        }
-
-                        //activate spring
-                        odrive.sendTorqueCommand(0,torque);
-                    }
-
-                    //deactivate spring
-                    else odrive.sendTorqueCommand(0,0);
+                    double torque = calculateTorque(displacement,theta,k);
+                    odrive.sendTorqueCommand(0,torque);
                 }
                 
             }
@@ -149,13 +137,6 @@ int main(int argc, char* argv[]) {
         }
 
     } while (requestRestart);
-
-    
-
-    
-    while(true) {
-        
-    }
     
     return 1;
 }
