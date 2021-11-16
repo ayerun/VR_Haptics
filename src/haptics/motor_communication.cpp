@@ -34,7 +34,7 @@ bool Odrive::updateVoltage() {
     }
 }
 
-bool Odrive::zeroEncoderPosition(int motor) {
+bool Odrive::zeroEncoderPosition(int motor, double init_pos) {
     std::string str = "f " + std::to_string(motor);
     bool response = writeToBoard(str,100);
     if (response) {
@@ -43,7 +43,7 @@ bool Odrive::zeroEncoderPosition(int motor) {
         if (dataReady) {
             int readResponse = uart_read_block(board,&readData,sizeof(readData),1000,UART_TERM_LF);
             if (isdigit(readData[0])) {
-                encoder_initial = std::stod(readData);
+                encoder_initial = std::stod(readData)-init_pos;
                 encoder_position = 0;    
                 return true;
             }

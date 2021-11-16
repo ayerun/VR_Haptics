@@ -11,7 +11,7 @@ class Odrive {
 
     bool updateVoltage();
     bool updateEncoderReadings(int motor);
-    bool zeroEncoderPosition(int motor);
+    bool zeroEncoderPosition(int motor, double init_pos=0);
     bool sendTorqueCommand(int motor, double torque);
     bool setClosedLoopControl(int motor);
     bool setTorqueControlMode(int motor);

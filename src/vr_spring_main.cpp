@@ -7,6 +7,7 @@
 #include "motor_communication.hpp"
 #include <fstream>
 #include <Eigen/Geometry>
+#include "computational_geometry.hpp"
 
 int main(int argc, char* argv[]) {
 
@@ -105,7 +106,7 @@ int main(int argc, char* argv[]) {
                 Twc.rotate(controller_orientation);
 
                 //compute rotation about y axis in degrees
-                float ang = atan2(Twc.rotation()(0,0),Twc.rotation()(2,0))*(180/PI);
+                float ang = atan2(Twc.rotation()(0,0),Twc.rotation()(2,0))*(180/geometry::PI);
                 std::cout << ang << std::endl;
 
                 //translate controller

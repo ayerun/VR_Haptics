@@ -93,7 +93,7 @@ install(TARGETS vr_spring
     COMPONENT vr_spring)
 
 
-# VR Spring - render wall as spring based on VR tracking
+# Controller Transform
 add_executable(controller_transform
     src/controller_transform_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}

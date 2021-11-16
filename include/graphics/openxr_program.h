@@ -4,7 +4,7 @@
 
 #pragma once
 
-#define PI 3.14159265358979323846
+// #define PI 3.14159265358979323846
 
 namespace Side {
 const int LEFT = 0;
