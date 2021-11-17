@@ -13,19 +13,22 @@
 double calculateTorque(double controller_height, double controller_angle) {
     double pointer_length = 0.18;   //controller contact point
     double floor_height = 0.1;      //contact suface location
-    double k = 30;                  //spring constant
+    double k = 500;                 //spring constant
     double torque_lim = DBL_MAX;    //torque limit
 
     double displacement = controller_height+pointer_length*sin(controller_angle)-floor_height;
-    // std::cout << displacement << std::endl;
+    std::cout << displacement << std::endl;
 
     if (displacement < 0) {
+
+        //square displacement to make K units N/m
+        displacement = pow(displacement,2);
 
         //calculate toque
         double torque = abs(k*displacement);
 
         //clamp torque
-        // torque = std::min(torque,torque_lim);
+        torque = std::min(torque,torque_lim);
 
         //reverse direction based on controller angle
         if (controller_angle > geometry::PI/2) {
@@ -36,7 +39,7 @@ double calculateTorque(double controller_height, double controller_angle) {
     else return 0;
 }
 
-Eigen::Transform<float,3,Eigen::Affine>toTransform(XrPosef& pose) {
+Eigen::Transform<float,3,Eigen::Affine> toTransform(XrPosef& pose) {
     //convert openXR types to Eigen
     Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pose.orientation.w,pose.orientation.x,pose.orientation.y,pose.orientation.z);
     Eigen::Vector3f controller_position(pose.position.x, pose.position.y, pose.position.z);
