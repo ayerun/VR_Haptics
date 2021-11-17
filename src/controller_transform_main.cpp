@@ -15,7 +15,7 @@ double calculateTorque(double controller_height, double controller_angle) {
     double k = 100;                 //spring constant
 
     double displacement = controller_height+pointer_length*sin(controller_angle)-floor_height;
-    std::cout << displacement << std::endl;
+    // std::cout << displacement << std::endl;
 
     if (displacement < 0) {
 
@@ -76,8 +76,10 @@ std::shared_ptr<IOpenXrProgram> initializeProgram() {
  
 int main(int argc, char* argv[]) {
 
-    //Controller
+    //Constants
     int hand = Side::LEFT;
+    double alpha = 1;
+    double cutoff_speed = 0.5;    //[m/s]
 
     //Odrive port
     std::string portname;
@@ -127,6 +129,13 @@ int main(int argc, char* argv[]) {
 
     //start timer
     std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
+    double last_time = 0;
+    double last_height = 0;
+    int count =0;
+
+    //initialize exponential filter
+    ExponentialFilter ef = ExponentialFilter(alpha);
+    LowPassFilter lf = LowPassFilter(cutoff_speed);
 
     bool exitRenderLoop = false;
     bool requestRestart = false;
@@ -167,13 +176,19 @@ int main(int argc, char* argv[]) {
                 auto Tw_c = Tww_.inverse()*Twc;
                 double controller_height = Tw_c.translation()(2);
 
-                //calculate torque and command motor
-                double torque = calculateTorque(controller_height,theta);
-                odrive.sendTorqueCommand(0,torque);
-
                 //track time
                 std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
                 double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-program_start).count();
+
+                //lowpass filter
+                controller_height = lf.filterData(controller_height,time_stamp);
+
+                //exponential smoothing
+                // controller_height = ef.filterData(controller_height);
+
+                //calculate torque and command motor
+                double torque = calculateTorque(controller_height,theta);
+                odrive.sendTorqueCommand(0,torque);
 
                  //write to csv
                 if (loggingEnabled) {

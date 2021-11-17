@@ -40,4 +40,32 @@ namespace geometry {
     double normalize_angle(double rad);
 }
 
+class ExponentialFilter {
+    public:
+        ExponentialFilter();
+        explicit ExponentialFilter(double a);
+
+        double filterData(double x);
+
+    private:
+        double alpha;
+        double forecast;
+        bool initialized;
+};
+
+class LowPassFilter {
+    public:
+        LowPassFilter();
+        explicit LowPassFilter(double cf);
+
+        double filterData(double height, double time);
+
+    private:
+        double last_time;
+        double last_height;
+        double cutoff;
+        double last_filtered_val;
+        double count = 0;
+};
+
 #endif
