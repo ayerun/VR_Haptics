@@ -8,11 +8,13 @@
 #include <fstream>
 #include <computational_geometry.hpp>
 #include <Eigen/Geometry>
+#include <float.h>
 
 double calculateTorque(double controller_height, double controller_angle) {
     double pointer_length = 0.18;   //controller contact point
     double floor_height = 0.1;      //contact suface location
-    double k = 100;                 //spring constant
+    double k = 30;                  //spring constant
+    double torque_lim = DBL_MAX;    //torque limit
 
     double displacement = controller_height+pointer_length*sin(controller_angle)-floor_height;
     // std::cout << displacement << std::endl;
@@ -23,7 +25,7 @@ double calculateTorque(double controller_height, double controller_angle) {
         double torque = abs(k*displacement);
 
         //clamp torque
-        torque = std::min(torque,0.5);
+        // torque = std::min(torque,torque_lim);
 
         //reverse direction based on controller angle
         if (controller_angle > geometry::PI/2) {
@@ -34,7 +36,7 @@ double calculateTorque(double controller_height, double controller_angle) {
     else return 0;
 }
 
-Eigen::Transform<float,3,Eigen::Affine> toTransform(XrPosef& pose) {
+Eigen::Transform<float,3,Eigen::Affine>toTransform(XrPosef& pose) {
     //convert openXR types to Eigen
     Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pose.orientation.w,pose.orientation.x,pose.orientation.y,pose.orientation.z);
     Eigen::Vector3f controller_position(pose.position.x, pose.position.y, pose.position.z);
@@ -78,8 +80,8 @@ int main(int argc, char* argv[]) {
 
     //Constants
     int hand = Side::LEFT;
-    double alpha = 1;
-    double cutoff_speed = 0.5;    //[m/s]
+    double alpha = 0.5;
+    double cutoff_speed = DBL_MAX;    //[m/s]
 
     //Odrive port
     std::string portname;
@@ -135,7 +137,6 @@ int main(int argc, char* argv[]) {
 
     //initialize exponential filter
     ExponentialFilter ef = ExponentialFilter(alpha);
-    LowPassFilter lf = LowPassFilter(cutoff_speed);
 
     bool exitRenderLoop = false;
     bool requestRestart = false;
@@ -180,11 +181,8 @@ int main(int argc, char* argv[]) {
                 std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
                 double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-program_start).count();
 
-                //lowpass filter
-                controller_height = lf.filterData(controller_height,time_stamp);
-
                 //exponential smoothing
-                // controller_height = ef.filterData(controller_height);
+                controller_height = ef.filterData(controller_height);
 
                 //calculate torque and command motor
                 double torque = calculateTorque(controller_height,theta);
