@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     //Constants
     int hand = Side::LEFT;
     double alpha = 0.5;
-    double cutoff_speed = DBL_MAX;    //[m/s]
+    bool drum_contact = false;
 
     //Odrive port
     std::string portname;
