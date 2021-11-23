@@ -1,0 +1,179 @@
+#N canvas 0 69 960 1011 12;
+#N canvas 0 0 450 300 (subpatch) 0;
+#X array cos-output 44100 float 0;
+#X coords 0 1.02 44100 -1.02 200 130 1;
+#X restore 728 367 graph;
+#N canvas 0 0 450 300 (subpatch) 0;
+#X array table18 44103 float 0;
+#X coords 0 1.02 44103 -1.02 200 130 1;
+#X restore 725 192 graph;
+#X obj 588 667 loadbang;
+#X obj 49 473 hip~ 5;
+#X floatatom 353 191 0 0 0 0 - - -;
+#X text 400 197 <-- frequency (Hz.);
+#X floatatom 375 252 0 0 0 0 - - -;
+#X obj 376 277 * 441;
+#X obj 354 326 +~ 1;
+#X text 415 249 <-- chunk size (100ths of a second);
+#X obj 588 580 adc~ 1;
+#X msg 603 605 bang;
+#X text 284 172 ENVELOPING YOUR LOOPING SAMPLER;
+#X obj 588 721 soundfiler;
+#X text 740 324 -- 44103 samples ---;
+#X text 731 498 ----- 1 second ------;
+#X obj 354 301 *~;
+#X text 32 586 Here we apply an amplitude envelope to protect against
+discontinuities at the loop point. The envelope is just a cosine wave
+from -90 degrees to +90 degrees \, (-pi/2 to pi/2 radians) \, i.e.
+\, the part that is zero or positive in sign. The "cos~" object's input
+is in cycles (units of 2pi radians) so -1/4 to +1/4 addresses the desired
+part of the waveform.;
+#X obj 198 481 tabwrite~ cos-output;
+#X obj 198 457 bng 15 250 50 0 empty empty empty 0 -6 0 8 -262144 -1
+-1;
+#X text 219 454 <-- click to graph envelope;
+#X text 32 700 To see the envelope \, put the phasor on 2 Hz or so
+\, click the "graph" button \, and look at "cos-output." This is multiplied
+by the tabread4~ output so that it doesn't click when the phase wraps
+around.;
+#X text 30 769 It is possible to get much more control over the shape
+of the envelope \, but this will be taken up later.;
+#X obj 588 632 tabwrite~ table18;
+#X text 645 606 <-- click here to record to table;
+#X text 679 675 v-- re-read the original sound;
+#X text 712 741 updated for Pd version 0.37;
+#X msg 588 696 read ./snare.wav table18;
+#X obj 52 512 output~;
+#X msg 21 301 1, f 4;
+#X obj 283 278 -~ 0.5;
+#X obj 282 305 *~ 0.5;
+#X obj 283 336 cos~;
+#X obj 47 442 *~;
+#X obj 46 348 adsr 1 10 70 300;
+#X floatatom 170 294 5 0 0 0 - - -;
+#X floatatom 67 296 5 0 0 0 - - -;
+#X floatatom 116 295 5 0 0 0 - - -;
+#X floatatom 229 294 5 0 0 0 - - -;
+#X obj 67 153 vsl 15 128 0 1000 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 2200 1;
+#X obj 115 152 vsl 15 128 0 1000 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 12700 1;
+#X obj 168 145 vsl 15 128 0 100 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 8300 1;
+#X obj 226 148 vsl 15 128 0 1000 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 0 1;
+#X obj 352 226 phasor~;
+#X obj 50 395 *~;
+#X floatatom 120 117 5 0 0 0 - - -;
+#X obj 132 77 route 0 1 2 3;
+#X obj 275 75 print;
+#X obj 131 46 netreceive 8080;
+#X obj 353 359 tabread~ table18;
+#X msg 678 1094 \; pd dsp 0;
+#N canvas 0 0 450 300 (subpatch) 0;
+#X array array99 155944 float 0;
+#X coords 0 1 155943 -1 250 200 1;
+#X restore 467 1170 graph;
+#X floatatom 72 1291 0 0 0 0 - - -;
+#X msg 50 1099 set array99;
+#X text 132 1099 "set" message permits you to switch between arrays
+;
+#X text 167 1229 creation argument initializes array name;
+#X obj 80 1014 tabplay~;
+#X text 147 1015 play a table as a sample (non-transposing);
+#X obj 50 1229 tabplay~ array99;
+#X obj 491 1083 soundfiler;
+#X floatatom 491 1105 0 0 0 0 - - -;
+#X obj 72 1265 env~ 16384;
+#X obj 114 1524 *~;
+#X obj 704 869 line~;
+#X msg 704 828 0.1 100;
+#X msg 720 849 0 100;
+#X text 766 829 on;
+#X text 761 848 off;
+#X text 752 866 envelope;
+#X text 752 877 generator;
+#X text 705 813 amplitude controls:;
+#X msg 70 1139 bang;
+#X text 68 1044 The tabplay~ object plays a sample \, or part of one
+\, with no transposition or interpolation. It is cheaper than tabread4~
+and there are none of tabread4~'s interpolation artifacts.;
+#X text 548 1026 click here to load table;
+#X text 124 1141 "bang" or 0 plays whole sample;
+#X msg 69 1205 stop;
+#X text 108 1204 stop playing (outputs zeros when stopped);
+#X obj 114 1582 output~;
+#X msg 491 1049 read -resize ./snare.wav array99 \; pd dsp 1 \;;
+#X msg 184 1421 1, f 4;
+#X obj 209 1468 adsr 1 10 70 300;
+#X floatatom 333 1414 5 0 0 0 - - -;
+#X floatatom 230 1416 5 0 0 0 - - -;
+#X floatatom 279 1415 5 0 0 0 - - -;
+#X floatatom 392 1414 5 0 0 0 - - -;
+#X obj 230 1273 vsl 15 128 0 1000 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 2200 1;
+#X obj 278 1272 vsl 15 128 0 1000 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 3400 1;
+#X obj 331 1265 vsl 15 128 0 100 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 1400 1;
+#X obj 389 1268 vsl 15 128 0 1000 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 3300 1;
+#X connect 2 0 27 0;
+#X connect 3 0 28 0;
+#X connect 3 0 28 1;
+#X connect 4 0 43 0;
+#X connect 6 0 7 0;
+#X connect 7 0 16 1;
+#X connect 8 0 49 0;
+#X connect 10 0 23 0;
+#X connect 11 0 23 0;
+#X connect 16 0 8 0;
+#X connect 19 0 18 0;
+#X connect 27 0 13 0;
+#X connect 29 0 34 0;
+#X connect 29 0 34 1;
+#X connect 30 0 31 0;
+#X connect 31 0 32 0;
+#X connect 32 0 44 1;
+#X connect 33 0 3 0;
+#X connect 33 0 18 0;
+#X connect 34 0 44 0;
+#X connect 35 0 34 4;
+#X connect 36 0 34 2;
+#X connect 37 0 34 3;
+#X connect 38 0 34 5;
+#X connect 39 0 36 0;
+#X connect 40 0 37 0;
+#X connect 41 0 35 0;
+#X connect 42 0 38 0;
+#X connect 43 0 16 0;
+#X connect 43 0 30 0;
+#X connect 44 0 33 0;
+#X connect 46 0 45 0;
+#X connect 48 0 46 0;
+#X connect 48 0 47 0;
+#X connect 49 0 33 1;
+#X connect 53 0 58 0;
+#X connect 58 0 61 0;
+#X connect 58 0 62 0;
+#X connect 59 0 60 0;
+#X connect 61 0 52 0;
+#X connect 62 0 77 0;
+#X connect 62 0 77 1;
+#X connect 64 0 63 0;
+#X connect 65 0 63 0;
+#X connect 71 0 58 0;
+#X connect 71 0 79 0;
+#X connect 75 0 58 0;
+#X connect 78 0 59 0;
+#X connect 79 0 80 0;
+#X connect 79 0 80 1;
+#X connect 80 0 62 1;
+#X connect 81 0 80 4;
+#X connect 82 0 80 2;
+#X connect 83 0 80 3;
+#X connect 84 0 80 5;
+#X connect 85 0 82 0;
+#X connect 86 0 83 0;
+#X connect 87 0 81 0;
+#X connect 88 0 84 0;
