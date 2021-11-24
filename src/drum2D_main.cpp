@@ -10,6 +10,26 @@
 #include <Eigen/Geometry>
 #include <float.h>
 
+bool checkContact(double torque) {
+    static bool drum_contact = false;   //is pointer touching drum currently?
+    static bool last_reading = false;   //was pointer touching drum during last reading?
+
+    //determine if pointer is touching drum
+    if (torque == 0) drum_contact = false;
+    else drum_contact = true;
+
+    //return true if the contact just occured
+    if (drum_contact == true && last_reading == false) {
+        last_reading = drum_contact;
+        std::cout << "1;" << std::endl;
+        return true;
+    }
+    else {
+        last_reading = drum_contact;
+        return false;
+    }
+}
+
 double calculateTorque(double controller_height, double controller_angle) {
     double pointer_length = 0.18;   //controller contact point
     double floor_height = 0.1;      //contact suface location
@@ -17,7 +37,6 @@ double calculateTorque(double controller_height, double controller_angle) {
     double torque_lim = DBL_MAX;    //torque limit
 
     double displacement = controller_height+pointer_length*sin(controller_angle)-floor_height;
-    std::cout << displacement << std::endl;
 
     if (displacement < 0) {
 
@@ -160,6 +179,10 @@ int main(int argc, char* argv[]) {
             XrTime displayTime = program->RenderFrame();
             XrSpaceLocation pos = program->getControllerSpace(displayTime, hand);
 
+            // XrSpaceVelocity* vel {static_cast<XrSpaceVelocity*>(pos.next)};
+            // Eigen::Vector3d vel
+            // Log::Write(Log::Level::Error, std::to_string(vel->linearVelocity.x));
+
             //Create controller tranformation matrix
             auto Twc = toTransform(pos.pose);
 
@@ -190,6 +213,7 @@ int main(int argc, char* argv[]) {
                 //calculate torque and command motor
                 double torque = calculateTorque(controller_height,theta);
                 odrive.sendTorqueCommand(0,torque);
+                checkContact(torque);
 
                  //write to csv
                 if (loggingEnabled) {
