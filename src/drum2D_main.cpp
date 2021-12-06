@@ -29,13 +29,13 @@ bool checkContact(double torque) {
     }
 }
 
-double calculateTorque(double controller_height, double controller_angle) {
-    double pointer_length = 0.18;   //controller contact point
+double calculateTorque(double pointer_height) {
     double floor_height = 0.1;      //contact suface location
     double k = 500;                 //spring constant
     double torque_lim = DBL_MAX;    //torque limit
 
-    double displacement = controller_height+pointer_length*sin(controller_angle)-floor_height;
+    double displacement = pointer_height-floor_height;
+    std::cout << displacement << std::endl;
 
     if (displacement < 0) {
 
@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
     //Constants
     int hand = Side::RIGHT;
     double alpha = 0.5;
+    float pointer_length = 0.18;   //end of drum stick
     bool playDrum = false;
 
     //Odrive port
@@ -166,10 +167,6 @@ int main(int argc, char* argv[]) {
         if (program->IsSessionRunning()) {
             program->PollActions();
 
-            //get encoder data
-            odrive.updateEncoderReadings(0);
-            const double theta = geometry::normalize_angle(geometry::rev2rad(-1*odrive.getEncoderPosition()));
-
             //Render and get controller data
             XrTime displayTime = program->RenderFrame();
             XrSpaceLocation pos = program->getControllerSpace(displayTime, hand);
@@ -181,14 +178,16 @@ int main(int argc, char* argv[]) {
             //Create controller tranformation matrix
             auto Twc = toTransform(pos.pose);
 
+            //rotate controller to make +Z up
+            Eigen::Matrix3f rot;
+            rot <<  1,0,0,
+                    0,-1,0,
+                    0,0,-1;
+            Twc.rotate(rot);
+
             //Define w_ frame at controller start position
             if (!originSet && program->isHandActive(hand)) {
-                //rotate controller to make +Z up
-                Eigen::Matrix3f rot;
-                rot <<  1,0,0,
-                        0,-1,0,
-                        0,0,-1;
-                Tww_ = Twc.rotate(rot);
+                Tww_ = Twc;
                 originSet = true;
             }
 
@@ -198,15 +197,26 @@ int main(int argc, char* argv[]) {
                 auto Tw_c = Tww_.inverse()*Twc;
                 double controller_height = Tw_c.translation()(2);
 
+                //calculate drumstick position in w_ frame
+                Eigen::Transform<float,3,Eigen::Affine> Tcp;
+                Tcp.setIdentity();
+                Eigen::Vector3f translation;
+                translation << 0.0, 0.0, pointer_length;
+                Tcp.translate(translation);
+                auto Tw_p = Tw_c*Tcp;
+
+                double pz = Tw_p.translation()(2);  //drumstick z coordinate
+
+
                 //track time
                 std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
                 double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-program_start).count();
 
                 //exponential smoothing
-                controller_height = ef.filterData(controller_height);
+                pz = ef.filterData(pz);
 
                 //calculate torque and command motor
-                double torque = calculateTorque(controller_height,theta);
+                double torque = calculateTorque(pz);
                 odrive.sendTorqueCommand(0,torque);
                 
                 //Check for contact and communicate with pd
