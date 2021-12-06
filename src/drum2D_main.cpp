@@ -10,6 +10,13 @@
 #include <Eigen/Geometry>
 #include <float.h>
 
+double map(double val, double i_low, double i_high, double o_low, double o_high) {
+    double m = (o_high-o_low)/(i_high-i_low);
+    double b = o_low-m*i_low;
+    double mapped_val = m*val+b;
+    return mapped_val;
+}
+
 bool checkContact(double torque) {
     static bool drum_contact = false;   //is pointer touching drum currently?
     static bool last_reading = false;   //was pointer touching drum during last reading?
@@ -29,15 +36,40 @@ bool checkContact(double torque) {
     }
 }
 
+double calculateVelocity(double z_pos) {
+    static double z_i = 0;
+    static bool initialized = false;
+    static std::chrono::steady_clock::time_point time_start;
+
+    if (!initialized) {
+        z_i = z_pos;
+        time_start = std::chrono::steady_clock::now();
+        initialized = true;
+        return 0;
+    }
+
+    //calculate change in pose
+    double dz = abs(z_pos-z_i);
+    z_i = z_pos;
+
+    //calculate change in time
+    std::chrono::steady_clock::time_point time_stop = std::chrono::steady_clock::now();
+    double dt = std::chrono::duration_cast<std::chrono::duration<double>>(time_stop-time_start).count();
+    time_start = time_stop;
+    
+    return dz/dt;
+
+}
+
 double calculateTorque(std::vector<double> drumstick_pos) {
-    double k = 500;                         //spring constant
+    double k = 1000;                         //spring constant
     double length = 0.4;                    //length of drum
     double width = 0.4;                     //width of drum
     std::vector<double> center = {0,0,0.1}; //center coordinates of drum
     double torque_lim = DBL_MAX;            //torque limit
 
     double displacement = drumstick_pos[2]-center[2];
-    std::cout << displacement << std::endl;
+    // std::cout << displacement << std::endl;
 
     //enforce drum boundaries
     if (drumstick_pos[0] > center[0]+width/2 || drumstick_pos[0] < center[0]-width/2 || drumstick_pos[1] > center[1]+length/2 || drumstick_pos[1] < center[1]-length/2) return 0;
@@ -104,7 +136,7 @@ int main(int argc, char* argv[]) {
     int hand = Side::RIGHT;
     double alpha = 0.5;
     float pointer_length = 0.18;   //end of drum stick
-    bool playDrum = false;
+    bool playDrum = true;
 
     //Odrive port
     std::string portname;
@@ -176,10 +208,6 @@ int main(int argc, char* argv[]) {
             XrTime displayTime = program->RenderFrame();
             XrSpaceLocation pos = program->getControllerSpace(displayTime, hand);
 
-            // XrSpaceVelocity* vel {static_cast<XrSpaceVelocity*>(pos.next)};
-            // Eigen::Vector3d vel
-            // Log::Write(Log::Level::Error, std::to_string(vel->linearVelocity.x));
-
             //Create controller tranformation matrix
             auto Twc = toTransform(pos.pose);
 
@@ -218,12 +246,18 @@ int main(int argc, char* argv[]) {
                 ef.filterData(drumstick_pos);
                 auto filtered_drumstick_pos = ef.getForcast();
 
+                //get drumstick velocity
+                double vel = calculateVelocity(filtered_drumstick_pos[2]);
+
                 //calculate torque and command motor
                 double torque = calculateTorque(filtered_drumstick_pos);
                 odrive.sendTorqueCommand(0,torque);
                 
                 //Check for contact and communicate with pd
-                if (playDrum && checkContact(torque)) std::cout << "1;" << std::endl;
+                if (playDrum && checkContact(torque)) {
+                    double vel_cmd = map(vel, 0, 8, 0, 3);
+                    std::cout << "0 " << vel_cmd << ";" << std::endl;
+                }
 
                 //track time
                 std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
