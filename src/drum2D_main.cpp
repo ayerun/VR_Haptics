@@ -61,18 +61,25 @@ double calculateVelocity(double z_pos) {
 
 }
 
-double calculateTorque(std::vector<double> drumstick_pos) {
+bool enforceDrumBoundaries(std::vector<double> drumstick_pos, std::vector<double> center, double length, double width) {
+    if (drumstick_pos[0] > center[0]+width/2 || drumstick_pos[0] < center[0]-width/2 || drumstick_pos[1] > center[1]+length/2 || drumstick_pos[1] < center[1]-length/2) return false;
+    else return true;
+}
+
+double calculateDistance(std::vector<double> drumstick_pos, std::vector<double> center) {
+    double dist = sqrt( pow((drumstick_pos[1]-center[1]),2) + pow((drumstick_pos[0]-center[0]),2) );
+    return dist;
+}
+
+double calculateTorque(double drumstick_z, double center_z) {
     double k = 1000;                         //spring constant
     double length = 0.4;                    //length of drum
     double width = 0.4;                     //width of drum
     std::vector<double> center = {0,0,0.1}; //center coordinates of drum
     double torque_lim = DBL_MAX;            //torque limit
 
-    double displacement = drumstick_pos[2]-center[2];
+    double displacement = drumstick_z-center_z;
     // std::cout << displacement << std::endl;
-
-    //enforce drum boundaries
-    if (drumstick_pos[0] > center[0]+width/2 || drumstick_pos[0] < center[0]-width/2 || drumstick_pos[1] > center[1]+length/2 || drumstick_pos[1] < center[1]-length/2) return 0;
 
     if (displacement < 0) {
 
@@ -136,6 +143,9 @@ int main(int argc, char* argv[]) {
     int hand = Side::RIGHT;
     double alpha = 0.5;
     float pointer_length = 0.18;   //end of drum stick
+    double drum_length = 0.4;                    //length of drum
+    double drum_width = 0.4;                     //width of drum
+    std::vector<double> drum_center = {0,0,0.1}; //center coordinates of drum
     bool playDrum = true;
 
     //Odrive port
@@ -179,6 +189,9 @@ int main(int argc, char* argv[]) {
     //initialize openXR program
     auto program = initializeProgram();
 
+    //sustain mapping val
+    double sustain_input_limit = sqrt(pow(drum_length,2)+pow(drum_width,2))/2;
+
     //world to world prime
     Eigen::Transform<float,3,Eigen::Affine> Tww_;
     Tww_.setIdentity();
@@ -186,9 +199,6 @@ int main(int argc, char* argv[]) {
 
     //start timer
     std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
-    double last_time = 0;
-    double last_height = 0;
-    int count =0;
 
     //initialize exponential filter
     ExponentialFilter2 ef = ExponentialFilter2(3,alpha);
@@ -250,13 +260,18 @@ int main(int argc, char* argv[]) {
                 double vel = calculateVelocity(filtered_drumstick_pos[2]);
 
                 //calculate torque and command motor
-                double torque = calculateTorque(filtered_drumstick_pos);
+                double torque = 0;
+                if (enforceDrumBoundaries(filtered_drumstick_pos,drum_center,drum_length,drum_width)) torque = calculateTorque(filtered_drumstick_pos[2],drum_center[2]);
                 odrive.sendTorqueCommand(0,torque);
                 
                 //Check for contact and communicate with pd
                 if (playDrum && checkContact(torque)) {
-                    double vel_cmd = map(vel, 0, 8, 0, 3);
-                    std::cout << "0 " << vel_cmd << ";" << std::endl;
+                    double distance_to_center = calculateDistance(filtered_drumstick_pos,drum_center);
+                    double attack_cmd = map(vel, 0, 8, 0, 3);
+                    double sustain_cmd = map(distance_to_center,0,sustain_input_limit,250,0);
+                    std::cout << "1 " << attack_cmd << ";" << std::endl;
+                    std::cout << "2 " << sustain_cmd << ";" << std::endl;
+                    std::cout << "0 1;" << std::endl;
                 }
 
                 //track time
