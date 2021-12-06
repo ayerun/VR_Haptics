@@ -38,6 +38,34 @@ double ExponentialFilter::filterData(double x) {
     return forecast;
 }
 
+ExponentialFilter2::ExponentialFilter2(int n){
+    alpha = 1;
+    for (int i=0; i<n; i++) forecast.push_back(0);
+    initialized = false;
+}
+
+ExponentialFilter2::ExponentialFilter2(int n, double a) {
+    alpha = a;
+    for (int i=0; i<n; i++) forecast.push_back(0);
+    initialized = false;
+}
+void ExponentialFilter2::filterData(std::vector<double>& x) {
+    if (x.size() != forecast.size()) return;
+
+    if (!initialized) {
+        for (int i=0; i<x.size(); i++) forecast[i] = x[i];
+        initialized = true;
+        return;
+    }
+    
+    for (int i=0; i<x.size(); i++) forecast[i] = alpha*x[i] + (1-alpha)*forecast[i];
+    return;
+}
+
+std::vector<double> ExponentialFilter2::getForcast() {
+    return forecast;
+}
+
 LowPassFilter::LowPassFilter() {
     last_time = 0;
     last_height = 0;

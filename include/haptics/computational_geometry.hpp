@@ -1,6 +1,8 @@
 #ifndef COMPUTATION_GEOMETRY_COMMUNICATION_GUARD
 #define COMPUTATION_GEOMETRY_COMMUNICATION_GUARD
 
+#include <vector>
+
 namespace geometry {
 
     constexpr double PI=3.14159265358979323846;
@@ -50,6 +52,20 @@ class ExponentialFilter {
     private:
         double alpha;
         double forecast;
+        bool initialized;
+};
+
+class ExponentialFilter2 {
+    public:
+        ExponentialFilter2(int n);
+        explicit ExponentialFilter2(int n, double a);
+
+        void filterData(std::vector<double>& x);
+        std::vector<double> getForcast();
+
+    private:
+        double alpha;
+        std::vector<double> forecast;
         bool initialized;
 };
 

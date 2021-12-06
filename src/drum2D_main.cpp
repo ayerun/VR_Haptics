@@ -29,13 +29,18 @@ bool checkContact(double torque) {
     }
 }
 
-double calculateTorque(double pointer_height) {
-    double floor_height = 0.1;      //contact suface location
-    double k = 500;                 //spring constant
-    double torque_lim = DBL_MAX;    //torque limit
+double calculateTorque(std::vector<double> drumstick_pos) {
+    double k = 500;                         //spring constant
+    double length = 0.4;                    //length of drum
+    double width = 0.4;                     //width of drum
+    std::vector<double> center = {0,0,0.1}; //center coordinates of drum
+    double torque_lim = DBL_MAX;            //torque limit
 
-    double displacement = pointer_height-floor_height;
+    double displacement = drumstick_pos[2]-center[2];
     std::cout << displacement << std::endl;
+
+    //enforce drum boundaries
+    if (drumstick_pos[0] > center[0]+width/2 || drumstick_pos[0] < center[0]-width/2 || drumstick_pos[1] > center[1]+length/2 || drumstick_pos[1] < center[1]-length/2) return 0;
 
     if (displacement < 0) {
 
@@ -154,7 +159,7 @@ int main(int argc, char* argv[]) {
     int count =0;
 
     //initialize exponential filter
-    ExponentialFilter ef = ExponentialFilter(alpha);
+    ExponentialFilter2 ef = ExponentialFilter2(3,alpha);
 
     bool exitRenderLoop = false;
     bool requestRestart = false;
@@ -205,22 +210,24 @@ int main(int argc, char* argv[]) {
                 Tcp.translate(translation);
                 auto Tw_p = Tw_c*Tcp;
 
-                double pz = Tw_p.translation()(2);  //drumstick z coordinate
-
-
-                //track time
-                std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
-                double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-program_start).count();
+                //get drumstick position
+                std::vector<double> drumstick_pos;
+                for (int i=0; i<3; i++) drumstick_pos.push_back(Tw_p.translation()(i));
 
                 //exponential smoothing
-                pz = ef.filterData(pz);
+                ef.filterData(drumstick_pos);
+                auto filtered_drumstick_pos = ef.getForcast();
 
                 //calculate torque and command motor
-                double torque = calculateTorque(pz);
+                double torque = calculateTorque(filtered_drumstick_pos);
                 odrive.sendTorqueCommand(0,torque);
                 
                 //Check for contact and communicate with pd
                 if (playDrum && checkContact(torque)) std::cout << "1;" << std::endl;
+
+                //track time
+                std::chrono::steady_clock::time_point loop_stop = std::chrono::steady_clock::now();
+                double time_stamp = std::chrono::duration_cast<std::chrono::duration<double>>(loop_stop-program_start).count();
 
                  //write to csv
                 if (loggingEnabled) {

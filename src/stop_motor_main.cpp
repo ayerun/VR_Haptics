@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-    Odrive odrive("/dev/ttyACM0", 115200);
+    Odrive odrive("/dev/ttyACM1", 115200);
     odrive.sendTorqueCommand(0,0);
     return 1;
 }
