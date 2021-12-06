@@ -21,7 +21,6 @@ bool checkContact(double torque) {
     //return true if the contact just occured
     if (drum_contact == true && last_reading == false) {
         last_reading = drum_contact;
-        std::cout << "1;" << std::endl;
         return true;
     }
     else {
@@ -49,10 +48,6 @@ double calculateTorque(double controller_height, double controller_angle) {
         //clamp torque
         torque = std::min(torque,torque_lim);
 
-        //reverse direction based on controller angle
-        if (controller_angle > geometry::PI/2) {
-            torque *= -1;
-        }
         return torque;
     }
     else return 0;
@@ -101,9 +96,9 @@ std::shared_ptr<IOpenXrProgram> initializeProgram() {
 int main(int argc, char* argv[]) {
 
     //Constants
-    int hand = Side::LEFT;
+    int hand = Side::RIGHT;
     double alpha = 0.5;
-    bool drum_contact = false;
+    bool playDrum = false;
 
     //Odrive port
     std::string portname;
@@ -173,7 +168,7 @@ int main(int argc, char* argv[]) {
 
             //get encoder data
             odrive.updateEncoderReadings(0);
-            const double theta = geometry::normalize_angle(geometry::rev2rad(odrive.getEncoderPosition()));
+            const double theta = geometry::normalize_angle(geometry::rev2rad(-1*odrive.getEncoderPosition()));
 
             //Render and get controller data
             XrTime displayTime = program->RenderFrame();
@@ -213,7 +208,9 @@ int main(int argc, char* argv[]) {
                 //calculate torque and command motor
                 double torque = calculateTorque(controller_height,theta);
                 odrive.sendTorqueCommand(0,torque);
-                checkContact(torque);
+                
+                //Check for contact and communicate with pd
+                if (playDrum && checkContact(torque)) std::cout << "1;" << std::endl;
 
                  //write to csv
                 if (loggingEnabled) {

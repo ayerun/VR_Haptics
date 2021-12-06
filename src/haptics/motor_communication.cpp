@@ -74,7 +74,7 @@ bool Odrive::updateEncoderReadings(int motor) {
             std::string encoderData(readData);
             int space = encoderData.find(" ");
             std::string encoderVelocity = encoderData.substr(space+1,7);
-            if (isdigit(readData[0]) && encoderVelocity.size() > 1) {
+            if ( (isdigit(readData[0]) || readData[0] == '-') && encoderVelocity.size() > 1) {
                 encoder_position = std::stod(encoderData)-encoder_initial;
                 encoder_velocity = std::stod(encoderVelocity);
                 return true;
