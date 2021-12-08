@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     double alpha = 0.5;                         //exponential filter alpha
     float pointer_length = 0.15;                //end of drum stick
 
-    //Drum Constants
+    //Snare Constants
     double snare_length = 0.4;                  //length of drum
     double snare_width = 0.4;                   //width of drum
     double snare_k = 600;
@@ -89,9 +89,33 @@ int main(int argc, char* argv[]) {
     snare_center << 0, 0, 0.1;
     std::pair<int,int> snare_sustain_limits{0,500};
     std::pair<int,int> snare_level_limits{0,3};
-    bool playDrum = true;
+
+    //Kick Constants
+    double kick_length = 0.4;                  //length of drum
+    double kick_width = 0.4;                   //width of drum
+    double kick_k = 1000;
+    Eigen::Vector3f kick_center;               //center coordinates of drum
+    kick_center << 0.4, -0.4, 0.1;
+    std::pair<int,int> kick_sustain_limits{0,500};
+    std::pair<int,int> kick_level_limits{0,5};
+
+    //Hi Hat Constants
+    double hat_length = 0.4;                  //length of drum
+    double hat_width = 0.4;                   //width of drum
+    double hat_k = 200;
+    Eigen::Vector3f hat_center;               //center coordinates of drum
+    hat_center << -0.4, -0.4, 0.1;
+    std::pair<int,int> hat_sustain_limits{0,500};
+    std::pair<int,int> hat_level_limits{0,3};
 
     Drum snare(0,snare_center,snare_length,snare_width,snare_k,snare_sustain_limits,snare_level_limits);
+    Drum kick(1,kick_center,kick_length,kick_width,kick_k,kick_sustain_limits,kick_level_limits);
+    Drum hat(2,hat_center,hat_length,hat_width,hat_k,hat_sustain_limits,hat_level_limits);
+
+    std::vector<Drum> drumkit;
+    drumkit.push_back(snare);
+    drumkit.push_back(kick);
+    drumkit.push_back(hat);
 
     //Odrive port
     std::string portname;
@@ -181,7 +205,10 @@ int main(int argc, char* argv[]) {
                 double vel = calculateVelocity(filtered_drumstick_pos[2]);
 
                 //calculate torque and command motor
-                double torque = snare.update(filtered_drumstick_pos,vel);
+                double torque = 0;
+                for (int i=0; i<drumkit.size(); i++) {
+                    torque = std::max(torque,drumkit[i].update(filtered_drumstick_pos,vel));
+                }
                 odrive.sendTorqueCommand(0,torque);
 
             }
