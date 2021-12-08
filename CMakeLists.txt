@@ -16,9 +16,7 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 add_definitions(-DXR_USE_GRAPHICS_API_VULKAN)
 
 file(GLOB LOCAL_GRAPHICS_HEADERS "include/graphics/*.h")
-file(GLOB LOCAL_HAPTICS_HEADERS "include/haptics/*.hpp")
 file(GLOB LOCAL_GRAPHICS_SOURCE "src/graphics/*.cpp")
-file(GLOB LOCAL_HAPTICS_SOURCE "src/haptics/*.cpp")
 file(GLOB VULKAN_SHADERS "vulkan_shaders/*.glsl")
 
 function(compile_glsl run_target_name)
@@ -43,6 +41,16 @@ include_directories("include/graphics" "include/haptics" ${CMAKE_CURRENT_BINARY_
 # Compile shaders
 compile_glsl(run_glsl_compiles ${VULKAN_SHADERS})
 
+# Declare haptics library
+add_library(haptics
+    src/haptics/haptics.cpp
+    src/haptics/motor_communication.cpp
+)
+
+target_link_libraries(haptics
+    Eigen3::Eigen
+    nuhal
+)
 
 # Scene - Rendering scene
 add_executable(scene
@@ -71,20 +79,16 @@ add_executable(vr_spring
     src/vr_spring_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}
     ${LOCAL_GRAPHICS_HEADERS}
-    ${LOCAL_HAPTICS_SOURCE}
-    ${LOCAL_HAPTICS_HEADERS}
     ${VULKAN_SHADERS})
 
 add_dependencies(vr_spring run_glsl_compiles)
 
 target_include_directories(vr_spring 
-    PRIVATE Eigen3::Eigen
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_link_libraries(vr_spring 
-    nuhal
-    Eigen3::Eigen
+    haptics
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
@@ -98,20 +102,16 @@ add_executable(drum
     src/4dof_drum_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}
     ${LOCAL_GRAPHICS_HEADERS}
-    ${LOCAL_HAPTICS_SOURCE}
-    ${LOCAL_HAPTICS_HEADERS}
     ${VULKAN_SHADERS})
 
 add_dependencies(drum run_glsl_compiles)
 
 target_include_directories(drum 
-    PRIVATE Eigen3::Eigen
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_link_libraries(drum 
-    nuhal
-    Eigen3::Eigen
+    haptics
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
@@ -119,15 +119,36 @@ install(TARGETS drum
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT drum)
 
+# Drumkit
+add_executable(kit
+src/drumkit_main.cpp
+${LOCAL_GRAPHICS_SOURCE}
+${LOCAL_GRAPHICS_HEADERS}
+${VULKAN_SHADERS})
+
+add_dependencies(kit run_glsl_compiles)
+
+target_include_directories(kit 
+PRIVATE OpenXR::Headers
+PRIVATE ${Vulkan_INCLUDE_DIRS})
+
+target_link_libraries(kit 
+haptics
+OpenXR::openxr_loader
+${Vulkan_LIBRARY})
+
+install(TARGETS kit
+RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+COMPONENT kit)
 
 # Stop Motor - Send torque command of 0
 add_executable(stop_motor
     src/stop_motor_main.cpp
-    ${LOCAL_HAPTICS_SOURCE}
-    ${LOCAL_HAPTICS_HEADERS})
+)
 
-target_link_libraries(stop_motor 
-    nuhal)
+target_link_libraries(stop_motor
+    haptics
+)
 
 install(TARGETS stop_motor
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -138,29 +159,27 @@ install(TARGETS stop_motor
 # Encoder Spring Demo
 add_executable(encoder_spring
     src/encoder_spring_main.cpp
-    src/haptics/motor_communication.cpp
-    include/haptics/motor_communication.hpp
 )
 
 target_link_libraries(encoder_spring
-    nuhal
+    haptics
 )
 
 install(TARGETS encoder_spring
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT encoder_spring)
 
+    
 # Noisy Encoder Spring Demo
 add_executable(noisy_encoder_spring
     src/noisy_encoder_spring_main.cpp
-    src/haptics/motor_communication.cpp
-    include/haptics/motor_communication.hpp
 )
 
 target_link_libraries(noisy_encoder_spring
-    nuhal
+    haptics
 )
 
 install(TARGETS noisy_encoder_spring
-RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-COMPONENT noisy_encoder_spring)
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT noisy_encoder_spring
+)

@@ -2,6 +2,7 @@
 #define COMPUTATION_GEOMETRY_COMMUNICATION_GUARD
 
 #include <vector>
+#include <Eigen/Geometry>
 
 namespace geometry {
 
@@ -42,6 +43,33 @@ namespace geometry {
     double normalize_angle(double rad);
 }
 
+double map(double val, double i_low, double i_high, double o_low, double o_high);
+
+class Drum {
+    public:
+        Drum();
+        Drum(int m_id, Eigen::Vector3f m_center, double m_length, double m_width, double m_k, std::pair<int,int>m_sustain_limits, std::pair<int,int> m_level_limits);
+    
+        bool withinDrumBoundaries(Eigen::Vector3f drumstick_position);
+        double calculateTorque(float drumstick_z_position);
+
+        bool checkContact(float drumstick_z_position);
+        double calculateDistance(Eigen::Vector3f drumstick_position);
+        void sendToPureData(Eigen::Vector3f drumstick_position, double drumstick_velocity);
+
+        double update(Eigen::Vector3f drumstick_position, double drumstick_velocity);
+
+
+    private:
+        Eigen::Vector3f center;
+        double width;
+        double length;
+        double k;
+        std::pair<int,int> sustain_limits;
+        std::pair<int,int> level_limits;
+        int id;
+};
+
 class ExponentialFilter {
     public:
         ExponentialFilter(int n);
@@ -49,6 +77,7 @@ class ExponentialFilter {
 
         void filterData(std::vector<double>& x);
         std::vector<double> getForcast();
+        Eigen::Vector3f getForcastFloat();
 
     private:
         double alpha;
