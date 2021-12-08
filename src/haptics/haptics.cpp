@@ -45,17 +45,17 @@ Drum::Drum(int m_id, Eigen::Vector3f m_center, double m_length, double m_width, 
     id = m_id;
 }
 
-bool Drum::withinDrumBoundaries(Eigen::Vector3f drumstick_position) {
+bool Drum::withinDrumBoundaries(const Eigen::Vector3f& drumstick_position) {
     if (drumstick_position[0] > center[0]+width/2 || drumstick_position[0] < center[0]-width/2 || drumstick_position[1] > center[1]+length/2 || drumstick_position[1] < center[1]-length/2) return false;
     else return true;
 }
 
-double Drum::calculateDistance(Eigen::Vector3f drumstick_position) {
+double Drum::calculateDistance(const Eigen::Vector3f &drumstick_position) {
     double dist = sqrt( pow((drumstick_position[1]-center[1]),2) + pow((drumstick_position[0]-center[0]),2) );
     return dist;
 }
 
-double Drum::calculateTorque(float drumstick_z_position) {
+double Drum::calculateTorque(const float &drumstick_z_position) {
     double torque_lim = DBL_MAX;
     double displacement = drumstick_z_position-center[2];
 
@@ -75,7 +75,7 @@ double Drum::calculateTorque(float drumstick_z_position) {
     else return 0;
 }
 
-bool Drum::checkContact(float drumstick_z_position) {
+bool Drum::checkContact(const float &drumstick_z_position) {
     static bool drum_contact = false;   //is pointer touching drum currently?
     static bool last_reading = false;   //was pointer touching drum during last reading?
 
@@ -96,7 +96,7 @@ bool Drum::checkContact(float drumstick_z_position) {
     }
 }
 
-void Drum::sendToPureData(Eigen::Vector3f drumstick_position, double drumstick_velocity) {
+void Drum::sendToPureData(const Eigen::Vector3f &drumstick_position, const double &drumstick_velocity) {
     //calculate sustain command
     double distance_to_center = calculateDistance(drumstick_position);
     double sustain_input_limit = sqrt(pow(length,2)+pow(width,2))/2;
@@ -109,7 +109,7 @@ void Drum::sendToPureData(Eigen::Vector3f drumstick_position, double drumstick_v
     std::cout << id << " " << level_cmd << " " << sustain_cmd << ";" << std::endl;
 }
 
-double Drum::update(Eigen::Vector3f drumstick_position, double drumstick_velocity) {
+double Drum::update(const Eigen::Vector3f &drumstick_position, const double &drumstick_velocity) {
     //enforce drum boundaries
     if (!withinDrumBoundaries(drumstick_position)) return 0;
 

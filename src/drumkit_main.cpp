@@ -77,42 +77,42 @@ std::shared_ptr<IOpenXrProgram> initializeProgram() {
 int main(int argc, char* argv[]) {
 
     //Constants
-    int hand = Side::RIGHT;
+    int hand = Side::RIGHT;                     //hand being used
     double alpha = 0.5;                         //exponential filter alpha
     float pointer_length = 0.15;                //end of drum stick
 
     //Snare Constants
-    double snare_length = 0.4;                  //length of drum
-    double snare_width = 0.4;                   //width of drum
-    double snare_k = 600;
-    Eigen::Vector3f snare_center;               //center coordinates of drum
+    double snare_length = 0.4;                      //length of drum [m]
+    double snare_width = 0.4;                       //width of drum [m]
+    double snare_k = 600;                           //spring constant [N/m]
+    std::pair<int,int> snare_sustain_limits{0,500}; //susatin [%]
+    std::pair<int,int> snare_level_limits{0,3};     //amplifier
+    Eigen::Vector3f snare_center;                   //center coordinates of drum [m]
     snare_center << 0, 0, 0.1;
-    std::pair<int,int> snare_sustain_limits{0,500};
-    std::pair<int,int> snare_level_limits{0,3};
 
     //Kick Constants
-    double kick_length = 0.4;                  //length of drum
-    double kick_width = 0.4;                   //width of drum
-    double kick_k = 1000;
-    Eigen::Vector3f kick_center;               //center coordinates of drum
+    double kick_length = 0.4;                       //length of drum [m]
+    double kick_width = 0.4;                        //width of drum [m]
+    double kick_k = 1000;                           //spring constant [N/m]
+    std::pair<int,int> kick_sustain_limits{0,500};  //susatin [%]
+    std::pair<int,int> kick_level_limits{0,5};      //amplifier
+    Eigen::Vector3f kick_center;                    //center coordinates of drum [m]
     kick_center << 0.4, -0.4, 0.1;
-    std::pair<int,int> kick_sustain_limits{0,500};
-    std::pair<int,int> kick_level_limits{0,5};
 
     //Hi Hat Constants
-    double hat_length = 0.4;                  //length of drum
-    double hat_width = 0.4;                   //width of drum
-    double hat_k = 200;
-    Eigen::Vector3f hat_center;               //center coordinates of drum
+    double hat_length = 0.4;                        //length of drum [m]
+    double hat_width = 0.4;                         //width of drum [m]
+    double hat_k = 200;                             //spring constant [N/m]
+    std::pair<int,int> hat_sustain_limits{0,500};   //susatin [%]
+    std::pair<int,int> hat_level_limits{0,3};       //amplifier
+    Eigen::Vector3f hat_center;                     //center coordinates of drum [m]
     hat_center << -0.4, -0.4, 0.1;
-    std::pair<int,int> hat_sustain_limits{0,500};
-    std::pair<int,int> hat_level_limits{0,3};
 
+    //Initialize Drumkit
+    std::vector<Drum> drumkit;
     Drum snare(0,snare_center,snare_length,snare_width,snare_k,snare_sustain_limits,snare_level_limits);
     Drum kick(1,kick_center,kick_length,kick_width,kick_k,kick_sustain_limits,kick_level_limits);
     Drum hat(2,hat_center,hat_length,hat_width,hat_k,hat_sustain_limits,hat_level_limits);
-
-    std::vector<Drum> drumkit;
     drumkit.push_back(snare);
     drumkit.push_back(kick);
     drumkit.push_back(hat);
@@ -145,6 +145,12 @@ int main(int argc, char* argv[]) {
     Tww_.setIdentity();
     bool originSet = false;
 
+    //180 rotation about x axis
+    Eigen::Matrix3f rot;
+    rot <<  1,0,0,
+            0,-1,0,
+            0,0,-1;
+
     //initialize exponential filter
     ExponentialFilter ef = ExponentialFilter(3,alpha);
 
@@ -167,10 +173,6 @@ int main(int argc, char* argv[]) {
             auto Twc = toTransform(pos.pose);
 
             //rotate controller to make +Z up
-            Eigen::Matrix3f rot;
-            rot <<  1,0,0,
-                    0,-1,0,
-                    0,0,-1;
             Twc.rotate(rot);
 
             //Define w_ frame at controller start position
@@ -197,7 +199,7 @@ int main(int argc, char* argv[]) {
                 std::vector<double> drumstick_pos;
                 for (int i=0; i<3; i++) drumstick_pos.push_back(Tw_p.translation()(i));
 
-                //exponential smoothing
+                //lowpass filter drumstick position
                 ef.filterData(drumstick_pos);
                 auto filtered_drumstick_pos = ef.getForcastFloat();
 

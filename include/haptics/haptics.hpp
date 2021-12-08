@@ -50,14 +50,14 @@ class Drum {
         Drum();
         Drum(int m_id, Eigen::Vector3f m_center, double m_length, double m_width, double m_k, std::pair<int,int>m_sustain_limits, std::pair<int,int> m_level_limits);
     
-        bool withinDrumBoundaries(Eigen::Vector3f drumstick_position);
-        double calculateTorque(float drumstick_z_position);
+        bool withinDrumBoundaries(const Eigen::Vector3f &drumstick_position);
+        double calculateTorque(const float &drumstick_z_position);
 
-        bool checkContact(float drumstick_z_position);
-        double calculateDistance(Eigen::Vector3f drumstick_position);
-        void sendToPureData(Eigen::Vector3f drumstick_position, double drumstick_velocity);
+        bool checkContact(const float &drumstick_z_position);
+        double calculateDistance(const Eigen::Vector3f &drumstick_position);
+        void sendToPureData(const Eigen::Vector3f &drumstick_position, const double &drumstick_velocity);
 
-        double update(Eigen::Vector3f drumstick_position, double drumstick_velocity);
+        double update(const Eigen::Vector3f &drumstick_position, const double &drumstick_velocity);
 
 
     private:
