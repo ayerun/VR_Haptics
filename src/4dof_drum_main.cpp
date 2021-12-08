@@ -72,10 +72,7 @@ double calculateDistance(std::vector<double> drumstick_pos, std::vector<double> 
 }
 
 double calculateTorque(double drumstick_z, double center_z) {
-    double k = 1000;                         //spring constant
-    double length = 0.4;                    //length of drum
-    double width = 0.4;                     //width of drum
-    std::vector<double> center = {0,0,0.1}; //center coordinates of drum
+    double k = 600;                         //spring constant
     double torque_lim = DBL_MAX;            //torque limit
 
     double displacement = drumstick_z-center_z;
@@ -142,11 +139,15 @@ int main(int argc, char* argv[]) {
     //Constants
     int hand = Side::RIGHT;
     double alpha = 0.5;
-    float pointer_length = 0.18;   //end of drum stick
+    float pointer_length = 0.15;                 //end of drum stick
     double drum_length = 0.4;                    //length of drum
     double drum_width = 0.4;                     //width of drum
     std::vector<double> drum_center = {0,0,0.1}; //center coordinates of drum
     bool playDrum = true;
+    int sustain_min = 0;
+    int sustain_max = 500;
+    int level_min = 0;
+    int level_max = 3;
 
     //Odrive port
     std::string portname;
@@ -262,14 +263,14 @@ int main(int argc, char* argv[]) {
                 //calculate torque and command motor
                 double torque = 0;
                 if (enforceDrumBoundaries(filtered_drumstick_pos,drum_center,drum_length,drum_width)) torque = calculateTorque(filtered_drumstick_pos[2],drum_center[2]);
-                odrive.sendTorqueCommand(0,torque);
+                // odrive.sendTorqueCommand(0,torque);
                 
                 //Check for contact and communicate with pd
                 if (playDrum && checkContact(torque)) {
                     double distance_to_center = calculateDistance(filtered_drumstick_pos,drum_center);
-                    double attack_cmd = map(vel, 0, 8, 0, 3);
-                    double sustain_cmd = map(distance_to_center,0,sustain_input_limit,250,0);
-                    std::cout << "1 " << attack_cmd << ";" << std::endl;
+                    double level_cmd = map(vel, 0, 8, level_min, level_max);
+                    double sustain_cmd = map(distance_to_center,0,sustain_input_limit,sustain_max,sustain_min);
+                    std::cout << "1 " << level_cmd << ";" << std::endl;
                     std::cout << "2 " << sustain_cmd << ";" << std::endl;
                     std::cout << "0 1;" << std::endl;
                 }

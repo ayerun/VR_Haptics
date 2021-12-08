@@ -93,31 +93,31 @@ install(TARGETS vr_spring
     COMPONENT vr_spring)
 
 
-# 2D drum
-add_executable(drum2D
-    src/drum2D_main.cpp
+# 4dof Drum
+add_executable(drum
+    src/4dof_drum_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}
     ${LOCAL_GRAPHICS_HEADERS}
     ${LOCAL_HAPTICS_SOURCE}
     ${LOCAL_HAPTICS_HEADERS}
     ${VULKAN_SHADERS})
 
-add_dependencies(drum2D run_glsl_compiles)
+add_dependencies(drum run_glsl_compiles)
 
-target_include_directories(drum2D 
+target_include_directories(drum 
     PRIVATE Eigen3::Eigen
     PRIVATE OpenXR::Headers
     PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-target_link_libraries(drum2D 
+target_link_libraries(drum 
     nuhal
     Eigen3::Eigen
     OpenXR::openxr_loader
     ${Vulkan_LIBRARY})
 
-install(TARGETS drum2D
+install(TARGETS drum
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT drum2D)
+    COMPONENT drum)
 
 
 # Stop Motor - Send torque command of 0
