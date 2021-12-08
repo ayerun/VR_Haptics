@@ -17,9 +17,9 @@ namespace geometry {
     }
 }
 
-double map(double val, double i_low, double i_high, double o_low, double o_high) {
-    double m = (o_high-o_low)/(i_high-i_low);
-    double b = o_low-m*i_low;
+double map(double val, std::pair<double,double> input_range, std::pair<double,double> output_range) {
+    double m = (output_range.second-output_range.first)/(input_range.second-input_range.first);
+    double b = output_range.first-m*input_range.first;
     double mapped_val = m*val+b;
     return mapped_val;
 }
@@ -35,7 +35,7 @@ Drum::Drum() {
     id = 0;
 }
 
-Drum::Drum(int m_id, Eigen::Vector3f m_center, double m_length, double m_width, double m_k, std::pair<int,int> m_sustain_limits, std::pair<int,int> m_level_limits) {
+Drum::Drum(int m_id, Eigen::Vector3f m_center, double m_length, double m_width, double m_k, std::pair<double,double> m_sustain_limits, std::pair<double,double> m_level_limits) {
     center = m_center;
     length = m_length;
     width = m_width;
@@ -100,10 +100,12 @@ void Drum::sendToPureData(const Eigen::Vector3f &drumstick_position, const doubl
     //calculate sustain command
     double distance_to_center = calculateDistance(drumstick_position);
     double sustain_input_limit = sqrt(pow(length,2)+pow(width,2))/2;
-    double sustain_cmd = map(distance_to_center,0,sustain_input_limit,sustain_limits.second,sustain_limits.first);
+    std::pair<double,double> sustain_input_range{sustain_input_limit,0};
+    double sustain_cmd = map(distance_to_center,sustain_input_range,sustain_limits);
 
     //calculate level command
-    double level_cmd = map(drumstick_velocity,0,8,level_limits.first,level_limits.second);
+    std::pair<double,double> level_input_range{0,8};
+    double level_cmd = map(drumstick_velocity,level_input_range,level_limits);
 
     //send commands
     std::cout << id << " " << level_cmd << " " << sustain_cmd << ";" << std::endl;

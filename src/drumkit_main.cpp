@@ -85,8 +85,8 @@ int main(int argc, char* argv[]) {
     double snare_length = 0.4;                      //length of drum [m]
     double snare_width = 0.4;                       //width of drum [m]
     double snare_k = 600;                           //spring constant [N/m]
-    std::pair<int,int> snare_sustain_limits{0,500}; //susatin [%]
-    std::pair<int,int> snare_level_limits{0,3};     //amplifier
+    std::pair<double,double> snare_sustain_limits{0,500}; //susatin [%]
+    std::pair<double,double> snare_level_limits{0,3};     //amplifier
     Eigen::Vector3f snare_center;                   //center coordinates of drum [m]
     snare_center << 0, 0, 0.1;
 
@@ -94,8 +94,8 @@ int main(int argc, char* argv[]) {
     double kick_length = 0.4;                       //length of drum [m]
     double kick_width = 0.4;                        //width of drum [m]
     double kick_k = 1000;                           //spring constant [N/m]
-    std::pair<int,int> kick_sustain_limits{0,500};  //susatin [%]
-    std::pair<int,int> kick_level_limits{0,5};      //amplifier
+    std::pair<double,double> kick_sustain_limits{0,500};  //susatin [%]
+    std::pair<double,double> kick_level_limits{0,5};      //amplifier
     Eigen::Vector3f kick_center;                    //center coordinates of drum [m]
     kick_center << 0.4, -0.4, 0.1;
 
@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
     double hat_length = 0.4;                        //length of drum [m]
     double hat_width = 0.4;                         //width of drum [m]
     double hat_k = 200;                             //spring constant [N/m]
-    std::pair<int,int> hat_sustain_limits{0,500};   //susatin [%]
-    std::pair<int,int> hat_level_limits{0,3};       //amplifier
+    std::pair<double,double> hat_sustain_limits{0,500};   //susatin [%]
+    std::pair<double,double> hat_level_limits{0,3};       //amplifier
     Eigen::Vector3f hat_center;                     //center coordinates of drum [m]
     hat_center << -0.4, -0.4, 0.1;
 

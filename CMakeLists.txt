@@ -97,49 +97,27 @@ install(TARGETS vr_spring
     COMPONENT vr_spring)
 
 
-# Drum - 4 degree of freedom haptic drum demo
-add_executable(drum
-    src/4dof_drum_main.cpp
-    ${LOCAL_GRAPHICS_SOURCE}
-    ${LOCAL_GRAPHICS_HEADERS}
-    ${VULKAN_SHADERS})
-
-add_dependencies(drum run_glsl_compiles)
-
-target_include_directories(drum 
-    PRIVATE OpenXR::Headers
-    PRIVATE ${Vulkan_INCLUDE_DIRS})
-
-target_link_libraries(drum 
-    haptics
-    OpenXR::openxr_loader
-    ${Vulkan_LIBRARY})
-
-install(TARGETS drum
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT drum)
-
-# Drumkit
-add_executable(kit
+# Drumkit - 4dof haptic drum demo
+add_executable(drumkit
 src/drumkit_main.cpp
 ${LOCAL_GRAPHICS_SOURCE}
 ${LOCAL_GRAPHICS_HEADERS}
 ${VULKAN_SHADERS})
 
-add_dependencies(kit run_glsl_compiles)
+add_dependencies(drumkit run_glsl_compiles)
 
-target_include_directories(kit 
+target_include_directories(drumkit 
 PRIVATE OpenXR::Headers
 PRIVATE ${Vulkan_INCLUDE_DIRS})
 
-target_link_libraries(kit 
+target_link_libraries(drumkit 
 haptics
 OpenXR::openxr_loader
 ${Vulkan_LIBRARY})
 
-install(TARGETS kit
+install(TARGETS drumkit
 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-COMPONENT kit)
+COMPONENT drumkit)
 
 # Stop Motor - Send torque command of 0
 add_executable(stop_motor
