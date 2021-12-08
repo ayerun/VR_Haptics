@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
     std::chrono::steady_clock::time_point program_start = std::chrono::steady_clock::now();
 
     //initialize exponential filter
-    ExponentialFilter2 ef = ExponentialFilter2(3,alpha);
+    ExponentialFilter ef = ExponentialFilter(3,alpha);
 
     bool exitRenderLoop = false;
     bool requestRestart = false;

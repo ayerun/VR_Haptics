@@ -44,21 +44,8 @@ namespace geometry {
 
 class ExponentialFilter {
     public:
-        ExponentialFilter();
-        explicit ExponentialFilter(double a);
-
-        double filterData(double x);
-
-    private:
-        double alpha;
-        double forecast;
-        bool initialized;
-};
-
-class ExponentialFilter2 {
-    public:
-        ExponentialFilter2(int n);
-        explicit ExponentialFilter2(int n, double a);
+        ExponentialFilter(int n);
+        explicit ExponentialFilter(int n, double a);
 
         void filterData(std::vector<double>& x);
         std::vector<double> getForcast();
@@ -67,21 +54,6 @@ class ExponentialFilter2 {
         double alpha;
         std::vector<double> forecast;
         bool initialized;
-};
-
-class LowPassFilter {
-    public:
-        LowPassFilter();
-        explicit LowPassFilter(double cf);
-
-        double filterData(double height, double time);
-
-    private:
-        double last_time;
-        double last_height;
-        double cutoff;
-        double last_filtered_val;
-        double count = 0;
 };
 
 #endif
