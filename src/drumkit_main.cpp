@@ -145,6 +145,13 @@ int main(int argc, char* argv[]) {
     Tww_.setIdentity();
     bool originSet = false;
 
+    //Static transform from controller to drumstick end
+    Eigen::Transform<float,3,Eigen::Affine> Tcp;
+    Tcp.setIdentity();
+    Eigen::Vector3f translation;
+    translation << 0.0, 0.0, pointer_length;
+    Tcp.translate(translation);
+
     //180 rotation about x axis
     Eigen::Matrix3f rot;
     rot <<  1,0,0,
@@ -185,14 +192,8 @@ int main(int argc, char* argv[]) {
 
                 //calculate controller position in w_ frame
                 auto Tw_c = Tww_.inverse()*Twc;
-                double controller_height = Tw_c.translation()(2);
 
                 //calculate drumstick position in w_ frame
-                Eigen::Transform<float,3,Eigen::Affine> Tcp;
-                Tcp.setIdentity();
-                Eigen::Vector3f translation;
-                translation << 0.0, 0.0, pointer_length;
-                Tcp.translate(translation);
                 auto Tw_p = Tw_c*Tcp;
 
                 //get drumstick position
@@ -206,13 +207,14 @@ int main(int argc, char* argv[]) {
                 //get drumstick velocity
                 double vel = calculateVelocity(filtered_drumstick_pos[2]);
 
-                //calculate torque and command motor
+                //calculate torque and send data to PD
                 double torque = 0;
                 for (int i=0; i<drumkit.size(); i++) {
                     torque = std::max(torque,drumkit[i].update(filtered_drumstick_pos,vel));
                 }
-                odrive.sendTorqueCommand(0,torque);
 
+                //Command motor
+                odrive.sendTorqueCommand(0,torque);
             }
             
         }
