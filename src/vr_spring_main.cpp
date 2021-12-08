@@ -7,7 +7,7 @@
 #include "motor_communication.hpp"
 #include <fstream>
 #include <Eigen/Geometry>
-#include "computational_geometry.hpp"
+#include "haptics.hpp"
 
 int main(int argc, char* argv[]) {
 

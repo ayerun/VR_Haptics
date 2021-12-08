@@ -6,7 +6,7 @@
 #include "openxr_program.h"
 #include "motor_communication.hpp"
 #include <fstream>
-#include <computational_geometry.hpp>
+#include <haptics.hpp>
 #include <Eigen/Geometry>
 #include <float.h>
 

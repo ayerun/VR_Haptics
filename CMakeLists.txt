@@ -93,7 +93,7 @@ install(TARGETS vr_spring
     COMPONENT vr_spring)
 
 
-# 4dof Drum
+# Drum - 4 degree of freedom haptic drum demo
 add_executable(drum
     src/4dof_drum_main.cpp
     ${LOCAL_GRAPHICS_SOURCE}
