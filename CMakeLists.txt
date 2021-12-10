@@ -76,7 +76,7 @@ install(TARGETS vr_spring
     COMPONENT vr_spring)
 
 
-# Drumkit - 4dof haptic drum demo
+# Drumkit - haptic drum demo
 add_executable(drumkit
 src/drumkit_main.cpp
 ${LOCAL_GRAPHICS_SOURCE}
@@ -97,19 +97,6 @@ ${Vulkan_LIBRARY})
 install(TARGETS drumkit
 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 COMPONENT drumkit)
-
-# Stop Motor - Send torque command of 0
-add_executable(stop_motor
-    src/stop_motor_main.cpp
-)
-
-target_link_libraries(stop_motor
-    haptics
-)
-
-install(TARGETS stop_motor
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT stop_motor)
 
 
 
