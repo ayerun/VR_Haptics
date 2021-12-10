@@ -7,15 +7,7 @@
 #include <unistd.h>
 #include <fstream>
 
-void signal_callback(int signum) {
-   std::cout << "Caught signal " << signum << std::endl;
-   std::cout << "Terminating Program" << std::endl;
-   exit(signum);
-}
-
 int main(int argc, char* argv[]) {
-    // Register signal and signal callback
-    signal(SIGINT, signal_callback);
 
     //logging
     std::string filename;
@@ -42,7 +34,7 @@ int main(int argc, char* argv[]) {
     }
     else {
         std::cout << "Invalid number of command line arguements" << std::endl;
-        return 0;
+        return 1;
     }
 
     //Odrive setup
@@ -51,10 +43,7 @@ int main(int argc, char* argv[]) {
 
     //constants
     double k = 0.1666667;   //[Nm/deg]
-    double frequency = 140; //[Hz]
-
     double torque = 0;
-    double loop_rate = 1/frequency;
 
     if (loggingEnabled) {    
         datafile.open(filename);
@@ -104,16 +93,9 @@ int main(int argc, char* argv[]) {
         if (loggingEnabled) {
             datafile << time_stamp << "," << current << "," << torque << "," << theta-360 << "\n";
         }
-
-        //enforce loop rate
-        if (time_span.count() < loop_rate) {
-            double sleeptime = loop_rate-time_span.count();
-            useconds_t microsleeptime = sleeptime*1e6;
-            usleep(microsleeptime);
-        }
     }
 
     //close file
     datafile.close();
-    return 1;
+    return 0;
 }

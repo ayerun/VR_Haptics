@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     }
     else {
         std::cout << "Invalid number of command line arguements" << std::endl;
-        return 0;
+        return 1;
     }
 
     //Odrive setup
@@ -108,9 +108,6 @@ int main(int argc, char* argv[]) {
                 //compute rotation about y axis in degrees
                 float ang = atan2(Twc.rotation()(0,0),Twc.rotation()(2,0))*(180/geometry::PI);
                 std::cout << ang << std::endl;
-
-                //translate controller
-                // Twc.translate(controller_position);
                 
 
                 //get encoder data
@@ -153,12 +150,4 @@ int main(int argc, char* argv[]) {
 
     } while (requestRestart);
 
-    
-
-    
-    while(true) {
-        
-    }
-    
-    return 1;
 }

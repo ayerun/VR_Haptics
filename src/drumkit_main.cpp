@@ -10,6 +10,9 @@
 #include <Eigen/Geometry>
 #include <float.h>
 
+/// \brief calculate controller velocity in the z direction
+/// \param z_pos - current z position
+/// \return z velocity
 double calculateVelocity(double z_pos) {
     static double z_i = 0;
     static bool initialized = false;
@@ -34,6 +37,8 @@ double calculateVelocity(double z_pos) {
     return dz/dt;
 }
 
+/// \brief convert OpenXR XrPosef to Eigen Transfrom
+/// \return transformation
 Eigen::Transform<float,3,Eigen::Affine> toTransform(XrPosef& pose) {
     //convert openXR types to Eigen
     Eigen::Quaternion<float,Eigen::AutoAlign> controller_orientation(pose.orientation.w,pose.orientation.x,pose.orientation.y,pose.orientation.z);
@@ -50,6 +55,9 @@ Eigen::Transform<float,3,Eigen::Affine> toTransform(XrPosef& pose) {
     return Twc;
 }
 
+
+/// \brief initialize OpenXR program
+/// \return pointer to program
 std::shared_ptr<IOpenXrProgram> initializeProgram() {
     // Set graphics plugin, VR form factor, and VR view configuration
     std::shared_ptr<Options> options = std::make_shared<Options>();
@@ -130,7 +138,7 @@ int main(int argc, char* argv[]) {
     } 
     else {
         std::cout << "Invalid number of command line arguements" << std::endl;
-        return 0;
+        return 1;
     }
 
     //Odrive setup
@@ -222,5 +230,5 @@ int main(int argc, char* argv[]) {
         else std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
     
-    return 1;
+    return 0;
 }

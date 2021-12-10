@@ -19,7 +19,6 @@ bool Odrive::updateVoltage() {
                 return true;
             }
             else {
-                // std::cout << "Voltage read write transaction failed" << std::endl;
                 return false;
             }
         }
@@ -48,7 +47,6 @@ bool Odrive::zeroEncoderPosition(int motor, double init_pos) {
                 return true;
             }
             else {
-                // std::cout << "Zero encoder read write transaction failed" << std::endl;
                 return false;
             }
         }
@@ -80,7 +78,6 @@ bool Odrive::updateEncoderReadings(int motor) {
                 return true;
             }
             else {
-                // std::cout << "Encoder read write transaction failed" << std::endl;
                 return false;
             }
         }
@@ -124,7 +121,6 @@ bool Odrive::updateMotorCurrent(int motor) {
                 return true;
             }
             else {
-                // std::cout << "Current read write transaction failed" << std::endl;
                 return false;
             }
         }
@@ -163,7 +159,6 @@ double Odrive::getEncoderVelocity() {
     return encoder_velocity;
 }
 
-//use string view
 bool Odrive::writeToBoard(const std::string& str, uint32_t timeout) {
 
     const auto strn = str+"\n";
