@@ -10,33 +10,6 @@
 #include <Eigen/Geometry>
 #include <float.h>
 
-/// \brief calculate controller velocity in the z direction
-/// \param z_pos - current z position
-/// \return z velocity
-double calculateVelocity(double z_pos) {
-    static double z_i = 0;
-    static bool initialized = false;
-    static std::chrono::steady_clock::time_point time_start;
-
-    if (!initialized) {
-        z_i = z_pos;
-        time_start = std::chrono::steady_clock::now();
-        initialized = true;
-        return 0;
-    }
-
-    //calculate change in pose
-    double dz = abs(z_pos-z_i);
-    z_i = z_pos;
-
-    //calculate change in time
-    std::chrono::steady_clock::time_point time_stop = std::chrono::steady_clock::now();
-    double dt = std::chrono::duration_cast<std::chrono::duration<double>>(time_stop-time_start).count();
-    time_start = time_stop;
-    
-    return dz/dt;
-}
-
 /// \brief convert OpenXR XrPosef to Eigen Transfrom
 /// \return transformation
 Eigen::Transform<float,3,Eigen::Affine> toTransform(XrPosef& pose) {
@@ -80,6 +53,33 @@ std::shared_ptr<IOpenXrProgram> initializeProgram() {
     program->CreateSwapchains();
 
     return program;
+}
+
+/// \brief calculate controller velocity in the z direction
+/// \param z_pos - current z position
+/// \return z velocity
+double calculateVelocity(double z_pos) {
+    static double z_i = 0;
+    static bool initialized = false;
+    static std::chrono::steady_clock::time_point time_start;
+
+    if (!initialized) {
+        z_i = z_pos;
+        time_start = std::chrono::steady_clock::now();
+        initialized = true;
+        return 0;
+    }
+
+    //calculate change in pose
+    double dz = abs(z_pos-z_i);
+    z_i = z_pos;
+
+    //calculate change in time
+    std::chrono::steady_clock::time_point time_stop = std::chrono::steady_clock::now();
+    double dt = std::chrono::duration_cast<std::chrono::duration<double>>(time_stop-time_start).count();
+    time_start = time_stop;
+    
+    return dz/dt;
 }
  
 int main(int argc, char* argv[]) {

@@ -5,10 +5,10 @@ Author: Arun Kumar
 This repository contains the software for a VR Haptic drumkit. 
 <a href="https://ayerun.github.io/Portfolio/haptics.html" target="_blank">Click Here For An In-Depth Project Summary</a>
 
-## Hardware
+## Hardware Dependencies
 This software is meant for use with the Valve Index, SteamVR Base Station 2.0, and ODrive.
 
-## Dependencies
+## Software Dependencies
 * OpenXR
 * Vulkan
 * Eigen3
