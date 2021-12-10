@@ -48,22 +48,22 @@ This software is meant for use with the Valve Index, SteamVR Base Station 2.0, a
     1. calibrate motor `odrv0.axis0.requested_state=AXIS_STATE_FULL_CALIBRATION_SEQUENCE`
     1. set motor in closed loop control `odrv0.axis0.requested_state=AXIS_STATE_CLOSED_LOOP_CONTROL`
         1. There is a bug in the ODrive ASCII protocol that prevents you from setting the state. These steps cannot be done through the motor communication library.
-1. launch SteamVR
 1. launch drum_kit.pd `pd {project}/drum/drum_kit.pd`
+1. launch SteamVR
 1. put on haptice device
 1. place controller vertical in the location you want the snare drum
 1. run executable and pipe output to Pure Data `{project}/build/drumkit | pdsend 8080`
 
 ## Executables
 * drumkit - haptic drum kit
-    * arguement 1 - ODrive portname
-    * if no arguements given, script uses the default portname
+    * arguement 1 - ODrive port name
+    * if no arguements given, script uses the default port name
     * output must be piped to Pure Data through port 8080
 * encoder_spring - 1 degree of freedom spring using encoder feedback, <a href="https://ayerun.github.io/Portfolio/haptics.html" target="_blank">see this for more details</a>
-    * argurement 1 - logfile name
-    * arguement 2 - portname
-    * if no arguements given, script does not log data and uses the default portname
+    * argurement 1 - log file name
+    * arguement 2 - port name
+    * if no arguements given, script does not log data and uses the default port name
 * vr_spring - 1 degree of freedom spring using vr tracking feedback, <a href="https://ayerun.github.io/Portfolio/haptics.html" target="_blank">see this for more details</a>
-    * argurement 1 - logfile name
-    * arguement 2 - portname
-    * if no arguements given, script does not log data and uses the default portname
+    * argurement 1 - log file name
+    * arguement 2 - port name
+    * if no arguements given, script does not log data and uses the default port name
