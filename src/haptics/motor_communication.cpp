@@ -104,26 +104,8 @@ bool Odrive::sendTorqueCommand(int motor, double torque) {
     return response;
 }
 
-bool Odrive::setClosedLoopControl(int motor) {
-    std::string str = "w axis" + std::to_string(motor) + ".requested_state=8";
-    bool response = writeToBoard(str,100);
-    return response;
-}
-
 bool Odrive::setTorqueControlMode(int motor) {
     std::string str = "w axis" + std::to_string(motor) + ".controller.config.control_mode=1";
-    bool response = writeToBoard(str,100);
-    return response;
-}
-
-bool Odrive::runFullCalibration(int motor) {
-    std::string str = "w axis" + std::to_string(motor) + ".requested_state=3";
-    bool response = writeToBoard(str,100);
-    return response;
-}
-
-bool Odrive::runEncoderOffsetCalibration(int motor) {
-    std::string str = "w axis" + std::to_string(motor) + ".requested_state=7";
     bool response = writeToBoard(str,100);
     return response;
 }

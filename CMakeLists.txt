@@ -52,27 +52,6 @@ target_link_libraries(haptics
     nuhal
 )
 
-# Scene - Rendering scene
-add_executable(scene
-    "src/scene_main.cpp"
-    ${LOCAL_GRAPHICS_SOURCE}
-    ${LOCAL_GRAPHICS_HEADERS}
-    ${VULKAN_SHADERS})
-
-add_dependencies(scene run_glsl_compiles)
-
-target_include_directories(scene 
-    PRIVATE OpenXR::Headers
-    PRIVATE ${Vulkan_INCLUDE_DIRS})
-
-target_link_libraries(scene 
-    OpenXR::openxr_loader
-    ${Vulkan_LIBRARY})
-
-install(TARGETS scene
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT scene)
-
 
 # VR Spring - render wall as spring based on VR tracking
 add_executable(vr_spring
@@ -146,18 +125,3 @@ target_link_libraries(encoder_spring
 install(TARGETS encoder_spring
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT encoder_spring)
-
-    
-# Noisy Encoder Spring Demo
-add_executable(noisy_encoder_spring
-    src/noisy_encoder_spring_main.cpp
-)
-
-target_link_libraries(noisy_encoder_spring
-    haptics
-)
-
-install(TARGETS noisy_encoder_spring
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    COMPONENT noisy_encoder_spring
-)
